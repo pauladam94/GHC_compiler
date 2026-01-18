@@ -1,0 +1,23 @@
+type maybe a
+data constructor Nothing : forall a. {} -> maybe a
+data constructor Just : forall a. { a } -> maybe a
+type list a
+data constructor Nil : forall a. {} -> list a
+data constructor Cons : forall a. { a; list a } -> list a
+program
+fun [a] [b] [c] (v : list a) (e1 : maybe b) (e2 : a -> list a -> maybe b) (big1 :
+  c) (big2 : b -> c) : c = 
+  join j (x : maybe b) : c = 
+    match x return c with
+    | Nothing [b_1_] {} ->
+        big1
+    | Just [b_1_] { x_1_ } ->
+        big2 x_1_
+    end
+  in
+  match v return c with
+  | Nil [a_1_] {} ->
+      (jump j {e1} : c)
+  | Cons [a_1_] { x_1_; xs } ->
+      (jump j {e2 x_1_ xs} : c)
+  end

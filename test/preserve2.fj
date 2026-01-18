@@ -1,0 +1,23 @@
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+
+type t
+data constructor A : {} -> t
+data constructor B : {} -> t
+data constructor C : {} -> t
+
+
+program
+      let preserve (v: t)(big: bool): bool =
+        match (join j (x: bool): bool = big in
+          match v return bool with
+          | A {} -> jump j { True {} } : bool
+          | B {} -> jump j { False {} } : bool
+          | C {} -> True {}
+          end) return bool with
+        | True {} -> False {}
+        | False {} -> True {}
+        end
+      in
+      preserve

@@ -1,0 +1,27 @@
+type maybe a
+data constructor Nothing : forall a. {} -> maybe a
+data constructor Just : forall a. { a } -> maybe a
+type list a
+data constructor Nil : forall a. {} -> list a
+data constructor Cons : forall a. { a; list a } -> list a
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun [a] (xs : list a) : bool = 
+  (* Missed opportunity! *)
+  (* -> inline j followed by rule (case) *)
+  join j (x : maybe a) : bool = 
+    match x return bool with
+    | Nothing [_] {} ->
+        False {}
+    | Just [_] { _ } ->
+        True {}
+    end
+  in
+  match xs return bool with
+  | Nil [a_1_] {} ->
+      (jump j { Nothing [a_1_] {} } : bool)
+  | Cons [a_1_] { x_1_; _ } ->
+      (jump j { Just [a_1_] { x_1_ } } : bool)
+  end

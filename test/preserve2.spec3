@@ -1,0 +1,25 @@
+type t
+data constructor C : {} -> t
+data constructor B : {} -> t
+data constructor A : {} -> t
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun (v : t) (big : bool) : bool = 
+  (* Missed opportunity! *)
+  (* -> float the join out of the match *)
+  match join j (x : bool) : bool =  big in
+  match v return bool with
+  | A {} ->
+      (jump j {True {}} : bool)
+  | B {} ->
+      (jump j {False {}} : bool)
+  | C {} ->
+      True {}
+  end return bool with
+  | True {} ->
+      False {}
+  | False {} ->
+      True {}
+  end

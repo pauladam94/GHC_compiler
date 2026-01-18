@@ -1,0 +1,16 @@
+type a
+data constructor A1 : {} -> a
+data constructor A2 : {} -> a
+
+type b
+data constructor B : {} -> b
+
+program
+  match (join j (x : a) : a = x in
+  (match (jump j { A1 {} } : a) return b -> a with 
+  | A1 {} -> (fun (x : b) = A2 {})
+  | A2 {} -> (fun (x : b) = A1 {})
+  end) (B {})) return b with
+  | A1 {} -> B {}
+  | A2 {} -> B {}
+  end

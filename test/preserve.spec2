@@ -1,0 +1,22 @@
+type t
+data constructor C : {} -> t
+data constructor B : {} -> t
+data constructor A : {} -> t
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun (v : t) (big : bool -> bool) : bool = 
+  match match v return bool with
+  | A {} ->
+      (big True {} : bool)
+  | B {} ->
+      (big False {} : bool)
+  | C {} ->
+      True {}
+  end return bool with
+  | True {} ->
+      False {}
+  | False {} ->
+      True {}
+  end

@@ -1,0 +1,2 @@
+program
+fun [a] [b] (v : a) (c : a -> b) : b = c (v : a)

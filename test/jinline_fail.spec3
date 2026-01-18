@@ -1,0 +1,10 @@
+type int
+data constructor Two : {} -> int
+data constructor Three : {} -> int
+data constructor One : {} -> int
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun (plus : int -> int -> int) : int = 
+  join j (x : int) : int =  plus x One {} in (jump j { Two {} } : int)

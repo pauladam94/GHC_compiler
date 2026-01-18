@@ -1,0 +1,27 @@
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+
+type list a
+data constructor Nil : forall a. {} -> list a
+data constructor Cons : forall a. { a ; list a } -> list a
+
+type maybe a
+data constructor Nothing : forall a. {} -> maybe a
+data constructor Just : forall a. { a } -> maybe a
+
+program
+      let any [a] (p: a -> bool)(xs: list a): bool =
+        join rec go (xs: list a): bool =
+          match xs return bool with
+          | Nil [a] {} -> False {}
+          | Cons [a] {x; xs} ->
+            match p x return bool with
+            | False {} -> jump go { xs }: bool
+            | True {} -> True {}
+            end
+          end
+        in
+        jump go { xs } : bool
+      in
+      any

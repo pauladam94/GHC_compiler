@@ -1,0 +1,9 @@
+type t
+type maybe a
+data constructor Nothing : forall a. {} -> maybe a
+data constructor Just : forall a. { a } -> maybe a
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+Just [bool] { False {} }

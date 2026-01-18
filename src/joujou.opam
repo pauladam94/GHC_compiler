@@ -1,0 +1,13 @@
+name: "joujou"
+opam-version: "2.0"
+
+synopsis: ""
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "ocaml" { >= "4.08" }
+  "dune"
+  "pprint"
+  "ppx_deriving"
+]

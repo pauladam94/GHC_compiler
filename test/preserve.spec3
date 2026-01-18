@@ -1,0 +1,20 @@
+type t
+data constructor C : {} -> t
+data constructor B : {} -> t
+data constructor A : {} -> t
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun (v : t) (big : bool -> bool) : bool = 
+  join j (x : bool) : bool = 
+    match x return bool with | True {} -> False {} | False {} -> True {} end
+  in
+  match v return bool with
+  | A {} ->
+      (jump j { (big True {} : bool) } : bool)
+  | B {} ->
+      (jump j { (big False {} : bool) } : bool)
+  | C {} ->
+      (jump j { True {} } : bool)
+  end

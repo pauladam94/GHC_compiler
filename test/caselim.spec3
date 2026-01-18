@@ -1,0 +1,27 @@
+type list a
+data constructor Nil : forall a. {} -> list a
+data constructor Cons : forall a. { a; list a } -> list a
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun [a] (xs : list a) (default : list a) : list a = 
+  join j (x : bool) : list a = 
+    match x return list a with
+    | True {} ->
+        default
+    | False {} ->
+        (match xs return list a with
+        | Nil [_] {} ->
+            Nil [a] {}
+        | Cons [_] { _; xs_1_ } ->
+            xs_1_
+        end : list a)
+    end
+  in
+  match xs return list a with
+  | Nil [_] {} ->
+      (jump j {True {}} : list a)
+  | Cons [_] { _; __1_ } ->
+      (jump j {False {}} : list a)
+  end

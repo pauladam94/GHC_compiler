@@ -1,0 +1,2 @@
+program
+fun [a] (x : a) : a = x

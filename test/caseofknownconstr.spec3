@@ -1,0 +1,5 @@
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun [a] (v1 : a) (v2 : a) : a = v1

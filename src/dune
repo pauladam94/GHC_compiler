@@ -1,0 +1,23 @@
+(ocamllex
+  (modules lexer))
+
+(menhir
+  (modules parser)
+  (flags --explain))
+
+(executable
+  (public_name joujou.exe)
+  (name joujou)
+  (promote (until-clean))
+  (preprocess (pps ppx_deriving.std))
+  (libraries unix pllib))
+
+;; Warnings are enabled (and fatal) during development,
+;; but are disabled in releases.
+
+(env
+  (dev (flags :standard
+          -strict-sequence -g
+          -w A-3-4-8-9-26-27-30-32-33-44-42-45-50-70))
+  (release (flags :standard))
+)

@@ -1,0 +1,23 @@
+type list a
+data constructor Nil : forall a. {} -> list a
+data constructor Cons : forall a. { a; list a } -> list a
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun [a] [b] [c] (b : bool) (e1 : list b) (e2 : list b) (big1 : c) (big2 : b ->
+  list b -> c) : c = 
+  join j (x : list b) : c = 
+    match x return c with
+    | Nil [_] {} ->
+        big1
+    | Cons [_] { a; as } ->
+        big2 a as
+    end
+  in
+  match b return c with
+  | True {} ->
+      (jump j { e1 } : c)
+  | False {} ->
+      (jump j { e2 } : c)
+  end

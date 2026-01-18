@@ -1,0 +1,14 @@
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun [a] (x : bool) (y : bool) (big1 : a) (big2 : a) : a = 
+  join j (x_1_ : bool) : a = 
+    match x_1_ return a with | True {} -> big1 | False {} -> big2 end
+  in
+  match x return a with
+  | True {} ->
+      (jump j { True {} } : a)
+  | False {} ->
+      (jump j { y } : a)
+  end

@@ -1,0 +1,7 @@
+type c
+data constructor C : {} -> c
+
+program
+  fun [a] [b] (v : b) = 
+    join j [b] (x : b) : c =  C {} in
+    jump j [a] { v } : c

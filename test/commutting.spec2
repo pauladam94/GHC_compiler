@@ -1,0 +1,12 @@
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+program
+fun [a] (e1 : bool) (e2 : bool) (e3 : bool) (big4 : a) (big5 : a) : a = 
+  match match e1 return bool with | True {} -> e2 | False {} -> e3 end return
+  a with
+  | True {} ->
+      big4
+  | False {} ->
+      big5
+  end

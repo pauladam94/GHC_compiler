@@ -1,0 +1,12 @@
+type b
+data constructor B : {} -> b
+type a
+data constructor A2 : {} -> a
+data constructor A1 : {} -> a
+program
+match join j (x : a) : a =  x in (jump j { A1 {} } : a) return b with
+| A1 {} ->
+    B {}
+| A2 {} ->
+    B {}
+end

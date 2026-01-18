@@ -1,0 +1,18 @@
+(library
+  (wrapped false)
+  (name pllib)
+  (libraries pprint)
+)
+
+(ocamllex
+  (modules identifierChop))
+
+;; Warnings are enabled (and fatal) during development,
+;; but are disabled in releases.
+
+(env
+  (dev (flags :standard
+          -strict-sequence -g
+          -w A-3-4-9-30-33-44-42-45-50-70))
+  (release (flags :standard))
+)

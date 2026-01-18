@@ -1,0 +1,3 @@
+program
+fun [a] (e : a) (three : a) (plus : a -> a -> a) (y : a) = 
+  plus (plus e three) y

@@ -1,0 +1,21 @@
+type bool
+data constructor True : {} -> bool
+data constructor False : {} -> bool
+
+type char
+
+type t
+data constructor A : {} -> t
+data constructor B : {} -> t
+data constructor C : {} -> t
+
+program
+      let ex1 (x: char)(v: t)(rhs: bool -> char -> char): char =
+        (join j (b: bool): char -> char = rhs b in
+         match v return char -> char with
+         | A {} -> jump j { True {} } : char -> char
+         | B {} -> jump j { False {} } : char -> char
+         | C {} -> fun (c: char) = c
+         end) x
+      in
+      ex1
