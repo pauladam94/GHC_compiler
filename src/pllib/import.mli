@@ -15,12 +15,12 @@ type env
 
 (* The empty environment. *)
 
-val empty: env
+val empty : env
 
 (* Contanenation of environments. The bindings in the right-hand
    environment take precedence. *)
 
-val cat: env -> env -> env
+val cat : env -> env -> env
 
 (* [fragment xs] turns a list of identifiers, which are to be newly
    bound, into an environment fragment that maps each identifier in
@@ -30,42 +30,42 @@ val cat: env -> env -> env
    the [bind] functions below, which extend a pre-existing
    environment, are sufficient. *)
 
-val fragment: identifier list -> env
+val fragment : identifier list -> env
 
 (* [linear xs] checks the list [xs] against multiply-defined identifiers. *)
 
-val linear: identifier list -> unit
+val linear : identifier list -> unit
 
 (* [bind_simultaneously env xs] extends the pre-existing environment
    [env] with the new environment [fragment xs]. *)
 
-val bind_simultaneously: env -> identifier list -> env
-  
+val bind_simultaneously : env -> identifier list -> env
+
 (* [bind env x] is equivalent to [bind_simultaneously env [x]]. *)
 
-val bind: env -> identifier -> env
+val bind : env -> identifier -> env
 
 (* [obind] is analogous to [bind], but concerns an optional identifier. *)
 
-val obind: env -> identifier option -> env
+val obind : env -> identifier option -> env
 
 (* [bind_sequentially env xs] binds the sequence of identifiers [xs], one
    after the other. It returns a pair of an extended environment and of a list
    of the atoms that were chosen fresh. (Hence, this is a list of distinct
    atoms, even if [xs] contains duplicate identifiers.) *)
 
-val bind_sequentially: env -> identifier list -> env * atom list
+val bind_sequentially : env -> identifier list -> env * atom list
 
 (* [resolves env sort x] tells whether the identifier [Identifier.mak sort x]
    is bound in the environment [env]. That is, it tells whether [resolve]
    will succeed if [x] is considered as a name of sort [sort]. *)
 
-val resolves: env -> sort -> string * Lexing.position * Lexing.position -> bool
+val resolves : env -> sort -> string * Lexing.position * Lexing.position -> bool
 
 (* [resolve env x] looks up the identifier [x] in the environment [env].
    If [x] is unknown, an error is signaled. *)
 
-val resolve: env -> identifier -> atom
+val resolve : env -> identifier -> atom
 
 (* Sometimes, identifiers of a certain sort are bound globally and implicitly
    -- that is, there is no explicit binding form for them. In that case, a
@@ -73,5 +73,4 @@ val resolve: env -> identifier -> atom
    call [mkglobal()] creates such a global environment, and returns a function
    that turns identifiers into atoms. *)
 
-val mkglobal: unit -> (identifier -> atom)
-
+val mkglobal : unit -> identifier -> atom

@@ -10,21 +10,21 @@ val pp_atom : Format.formatter -> atom -> unit
 
 (* [fresh] and [fresha] produce a fresh atom. *)
 
-val fresh: Identifier.t -> atom
-val fresha: atom -> atom
+val fresh : Identifier.t -> atom
+val fresha : atom -> atom
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Accessors. *)
 
-val identifier: atom -> Identifier.t
+val identifier : atom -> Identifier.t
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Comparison. *)
 
-val equal: atom -> atom -> bool
-val compare: atom -> atom -> int
+val equal : atom -> atom -> bool
+val compare : atom -> atom -> int
 
 (* ---------------------------------------------------------------------------- *)
 
@@ -33,14 +33,11 @@ val compare: atom -> atom -> int
 module AtomSet : Set.S with type elt = atom
 
 module AtomMap : sig
-
   include Map.S with type key = atom
 
-  val of_list: (atom * 'a) list -> 'a t
-
-  val cardinal: 'a t -> int
-  val index: 'a t -> int * (key -> int)
-
+  val of_list : (atom * 'a) list -> 'a t
+  val cardinal : 'a t -> int
+  val index : 'a t -> int * (key -> int)
 end
 
 (* ---------------------------------------------------------------------------- *)
@@ -55,10 +52,10 @@ end
 
 type phase
 
-val setup: unit -> phase
-val copy_binder: phase -> atom -> atom
-val copy_occurrence: phase -> atom -> atom
-val close: phase -> unit
+val setup : unit -> phase
+val copy_binder : phase -> atom -> atom
+val copy_occurrence : phase -> atom -> atom
+val close : phase -> unit
 
 (* ---------------------------------------------------------------------------- *)
 
@@ -80,8 +77,8 @@ val close: phase -> unit
 exception Map
 
 (* val setup: as above *)
-val map_binder: phase -> atom -> atom -> unit
-val map_occurrence: phase -> atom -> atom -> unit
+val map_binder : phase -> atom -> atom -> unit
+val map_occurrence : phase -> atom -> atom -> unit
 (* val close: as above *)
 
 (* ---------------------------------------------------------------------------- *)
@@ -95,7 +92,6 @@ val map_occurrence: phase -> atom -> atom -> unit
    atom and if this is the first time [a] is encountered. *)
 
 (* val setup: as above *)
-val fv_binder: phase -> atom -> unit
-val fv_occurrence: phase -> atom -> atom list -> atom list
+val fv_binder : phase -> atom -> unit
+val fv_occurrence : phase -> atom -> atom list -> atom list
 (* val close: as above *)
-

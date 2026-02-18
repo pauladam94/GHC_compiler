@@ -2,5 +2,4 @@
    this involves replacing identifiers with atoms, and making sure that
    every identifier is properly bound. *)
 
-val program: Syntax.program -> Terms.pre_program
-
+val program : Syntax.program -> Terms.pre_program

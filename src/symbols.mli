@@ -6,20 +6,19 @@ open Terms
 
 (* [fv term] is the set of the free term variables of [term]. *)
 
-val fv: ('a, 'b, 'c, 'd, 'e, 'f) _fterm -> AtomSet.t
+val fv : ('a, 'b, 'c, 'd, 'e, 'f) _fterm -> AtomSet.t
 
 (* [type_constructor p dc] produces the type constructor with which the
    data constructor [dc] is associated. *)
 
-val type_constructor: ('a, 'b, 'c, 'd, 'e, 'f) _program -> atom -> atom
+val type_constructor : ('a, 'b, 'c, 'd, 'e, 'f) _program -> atom -> atom
 
 (* [type_scheme p dc] produces the type scheme associated with the data
    constructor [dc]. *)
 
-val type_scheme: ('a, 'b, 'c, 'd, 'e, 'f) _program -> atom -> ftype
+val type_scheme : ('a, 'b, 'c, 'd, 'e, 'f) _program -> atom -> ftype
 
 (* [data_constructors p tc] produces a set of the data constructors
    associated with the type constructor [tc]. *)
 
-val data_constructors: ('a, 'b, 'c, 'd, 'e, 'f) _program -> atom -> AtomSet.t
-
+val data_constructors : ('a, 'b, 'c, 'd, 'e, 'f) _program -> atom -> AtomSet.t

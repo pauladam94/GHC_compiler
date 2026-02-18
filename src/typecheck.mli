@@ -11,7 +11,7 @@ open Types
    with an export environment that allows printing this type if
    desired. *)
 
-val run: pre_program -> Export.env * ftype
+val run : pre_program -> Export.env * ftype
 
 (* Petrifaction turns the dynamic ([ref]) metadata produced by the
    typechecker into static metadata (no [ref]). In doing so, it makes
@@ -25,4 +25,4 @@ val petrify_fterm : pre_fterm -> fterm
    produced by the typechecker to return the type of any given
    petrified term. *)
 
-val type_of: fterm -> ftype
+val type_of : fterm -> ftype

@@ -1,0 +1,4 @@
+profile=default # you can use 'janestreet'
+version=0.28.1
+extension-indent=4
+function-indent=4

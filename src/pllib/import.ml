@@ -11,19 +11,16 @@
    carry distinct source code locations. This allows reporting
    multiply-defined identifiers in a nice way. *)
 
-type multiset =
-    Identifier.t list Identifier.Map.t
+type multiset = Identifier.t list Identifier.Map.t
 
 let list2multiset (xs : Identifier.t list) : multiset =
-  List.fold_left (fun multiset x ->
-    let previous : Identifier.t list =
-      try
-	Identifier.Map.find x multiset
-      with Not_found ->
-	[]
-    in
-    Identifier.Map.add x (x :: previous) multiset
-  ) Identifier.Map.empty xs
+  List.fold_left
+    (fun multiset x ->
+      let previous : Identifier.t list =
+        try Identifier.Map.find x multiset with Not_found -> []
+      in
+      Identifier.Map.add x (x :: previous) multiset)
+    Identifier.Map.empty xs
 
 (* When a multiply-defined identifier is detected, an error message is
    displayed, which carries the name of the identifier, together with a
@@ -31,33 +28,29 @@ let list2multiset (xs : Identifier.t list) : multiset =
 
 let allocate (xs : Identifier.t list) : Atom.atom =
   match xs with
-  | [] ->
-      assert false  (* cannot happen *)
-  | [ x ] ->
-      Atom.fresh x (* normal case; allocate a fresh atom for [x] *)
+  | [] -> assert false (* cannot happen *)
+  | [ x ] -> Atom.fresh x (* normal case; allocate a fresh atom for [x] *)
   | x :: _ :: _ ->
       Error.signal
-	(List.map Identifier.location xs)
-	(Printf.sprintf "Multiply-defined %s identifier: %s.\n"
-	  (let _, sort = Identifier.sort x in sort)
-	  (Identifier.name x));
+        (List.map Identifier.location xs)
+        (Printf.sprintf "Multiply-defined %s identifier: %s.\n"
+           (let _, sort = Identifier.sort x in
+            sort)
+           (Identifier.name x));
       Atom.fresh x (* abnormal case; succeed anyway, for now *)
 
 (* An import environment maps identifiers to atoms. *)
 
-type env =
-    Atom.atom Identifier.Map.t
+type env = Atom.atom Identifier.Map.t
 
 (* The empty environment. *)
 
-let empty : env =
-  Identifier.Map.empty
+let empty : env = Identifier.Map.empty
 
 (* Contanenation of environments. The bindings in the right-hand
    environment take precedence. *)
 
-let cat =
-  Identifier.Map.union
+let cat = Identifier.Map.union
 
 (* [fragment xs] turns a list of identifiers, which are to be newly
    bound, into an environment fragment that maps each identifier in
@@ -71,8 +64,7 @@ let cat =
    the multiset, to obtain a map of identifiers to atoms. In the
    process, we check for multiply-defined identifiers. *)
 
-let fragment xs : env =
-  Identifier.Map.map allocate (list2multiset xs)
+let fragment xs : env = Identifier.Map.map allocate (list2multiset xs)
 
 (* [linear xs] checks the list [xs] against multiply-defined identifiers. *)
 
@@ -83,21 +75,15 @@ let linear xs : unit =
 (* [bind_simultaneously env xs] extends the pre-existing environment
    [env] with the new environment [fragment xs]. *)
 
-let bind_simultaneously env xs : env =
-  cat env (fragment xs)
+let bind_simultaneously env xs : env = cat env (fragment xs)
 
 (* [bind env x] is equivalent to [bind_simultaneously env [x]]. *)
 
-let bind env x : env =
-  Identifier.Map.add x (Atom.fresh x) env
+let bind env x : env = Identifier.Map.add x (Atom.fresh x) env
 
 (* [obind] is analogous to [bind], but concerns an optional identifier. *)
 
-let obind env = function
-  | None ->
-      env
-  | Some x ->
-      bind env x
+let obind env = function None -> env | Some x -> bind env x
 
 (* [bind_sequentially env xs] binds the sequence of identifiers [xs], one
    after the other. It returns a pair of an extended environment and of a list
@@ -111,34 +97,35 @@ let obind env = function
 
 let bind_sequentially env xs : env * Atom.atom list =
   let env, atoms =
-    List.fold_left (fun (env, atoms) x ->
-      let atom = Atom.fresh x in
-      Identifier.Map.add x atom env,
-      atom :: atoms
-    ) (env, []) xs
+    List.fold_left
+      (fun (env, atoms) x ->
+        let atom = Atom.fresh x in
+        (Identifier.Map.add x atom env, atom :: atoms))
+      (env, []) xs
   in
-  env, List.rev atoms
+  (env, List.rev atoms)
 
 (* [resolves env sort x] tells whether the identifier [Identifier.mak sort x]
    is bound in the environment [env]. That is, it tells whether [resolve]
    will succeed if [x] is considered as a name of sort [sort]. *)
 
-let resolves env sort x =
-  Identifier.Map.mem (Identifier.mak sort x) env
+let resolves env sort x = Identifier.Map.mem (Identifier.mak sort x) env
 
 (* [resolve env x] looks up the identifier [x] in the environment [env]. If
    [x] is unknown, an error is signaled. *)
 
 let resolve env x : Atom.atom =
   try
-    Identifier.Map.find x env (* normal case: return the atom associated with [x] *)
+    Identifier.Map.find x
+      env (* normal case: return the atom associated with [x] *)
   with Not_found ->
     Error.signal
       [ Identifier.location x ]
       (Printf.sprintf "Undefined %s identifier: %s.\n"
-	(let _, sort = Identifier.sort x in sort)
-	(Identifier.name x));
-    Atom.fresh x             (* abnormal case; succeed anyway, for now *)
+         (let _, sort = Identifier.sort x in
+          sort)
+         (Identifier.name x));
+    Atom.fresh x (* abnormal case; succeed anyway, for now *)
 
 (* Sometimes, identifiers of a certain sort are bound globally and implicitly
    -- that is, there is no explicit binding form for them. In that case, a
@@ -147,14 +134,10 @@ let resolve env x : Atom.atom =
    that turns identifiers to atoms. *)
 
 let mkglobal () : Identifier.t -> Atom.atom =
-  let env =
-    ref empty
-  in
+  let env = ref empty in
   fun id ->
-    try
-      Identifier.Map.find id !env
+    try Identifier.Map.find id !env
     with Not_found ->
       let atom = Atom.fresh id in
       env := Identifier.Map.add id atom !env;
       atom
-

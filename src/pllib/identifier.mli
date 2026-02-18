@@ -6,8 +6,7 @@
    sorts: a sort is a pair of an integer (for comparison) and a
    string (for printing). *)
 
-type sort =
-    int * string
+type sort = int * string
 
 (* ---------------------------------------------------------------------------- *)
 
@@ -18,51 +17,35 @@ type sort =
 type identifier
 type t = identifier
 
-val pp_identifier: Format.formatter -> identifier -> unit
+val pp_identifier : Format.formatter -> identifier -> unit
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Constructors and accessors. *)
 
-val make:
-  string ->
-  sort ->
-  Lexing.position ->
-  Lexing.position ->
-  t
-
-val mak:
-  sort ->
-  string * Lexing.position * Lexing.position ->
-  t
-
-val mk:
-  string ->
-  sort ->
-  t
-
-val name: t -> string
-val sort: t -> sort
-val startp: t -> Lexing.position
-val endp: t -> Lexing.position
-val location: t -> Lexing.position * Lexing.position
+val make : string -> sort -> Lexing.position -> Lexing.position -> t
+val mak : sort -> string * Lexing.position * Lexing.position -> t
+val mk : string -> sort -> t
+val name : t -> string
+val sort : t -> sort
+val startp : t -> Lexing.position
+val endp : t -> Lexing.position
+val location : t -> Lexing.position * Lexing.position
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Comparison. *)
 
-val compare: t -> t -> int
+val compare : t -> t -> int
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Maps whose keys are identifiers. *)
 
 module Map : sig
-
   include Map.S with type key = t
 
-  val union: 'a t -> 'a t -> 'a t
-
+  val union : 'a t -> 'a t -> 'a t
 end
 
 (* ---------------------------------------------------------------------------- *)
@@ -89,6 +72,5 @@ end
    combining the integer 0 with an identifier should have no effect.
    These laws may be exploited to avoid needless renamings. *)
 
-val basename: t -> t
-val combine: t -> int -> t
-
+val basename : t -> t
+val combine : t -> int -> t

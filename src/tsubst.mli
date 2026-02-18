@@ -6,7 +6,6 @@ open Types
 type tsubst
 
 val empty : tsubst
-
 val bind : atom -> ftype -> tsubst -> tsubst
 val binds : (atom * ftype) list -> tsubst -> tsubst
 
@@ -18,9 +17,9 @@ val binds_tycon : ftype -> ftype -> tsubst -> tsubst
 
 (* [apply tsubst typ] discharges the type substitution [tsubst] into [typ]. *)
 
-val apply: tsubst -> ftype -> ftype
+val apply : tsubst -> ftype -> ftype
 
 (* [equal tsubst typ1 typ2] tells whether [typ1] and [typ2] are equal
    under the type substitution [tsubst]. *)
 
-val equal: tsubst -> ftype -> ftype -> bool
+val equal : tsubst -> ftype -> ftype -> bool

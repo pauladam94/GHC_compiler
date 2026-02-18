@@ -42,48 +42,42 @@ open Atom
    types, so that type schemes can be considered types. *)
 
 type ftype =
-  | TyBoundVar of int
-      (* this constructor must not be used by clients *)
-  | TyFreeVar of atom
-      (* a *)
-  | TyArrow of ftype * ftype
-      (* T -> T *)
-  | TyForall of ftype_context
-      (* forall a . T *)
-  | TyCon of atom * ftype list
-      (* tc T ... T *)
+  | TyBoundVar of int (* this constructor must not be used by clients *)
+  | TyFreeVar of atom (* a *)
+  | TyArrow of ftype * ftype (* T -> T *)
+  | TyForall of ftype_context (* forall a . T *)
+  | TyCon of atom * ftype list (* tc T ... T *)
   | TyTuple of ftype list
-      (* { T; ... T } *)
+(* { T; ... T } *)
 
 and ftype_context
-      (* the representation of type contexts is not published, so the only way
+(* the representation of type contexts is not published, so the only way
 	 to create and use them is via [abstract] and [fill] below. *)
 
 (* ------------------------------------------------------------------------- *)
 
 (* [equal] tells whether two types are equal up to alpha-equivalence. *)
 
-val equal: ftype -> ftype -> bool
-
+val equal : ftype -> ftype -> bool
 
 (* ------------------------------------------------------------------------- *)
 
 (* [abstract a ty] replaces every free occurrence of the type variable
    [a] in the type [ty] with a hole, producing a type context. *)
 
-val abstract: atom -> ftype -> ftype_context
+val abstract : atom -> ftype -> ftype_context
 
 (* [fill c ty] fills the type context [c] with the type [ty], producing a
    type. *)
 
-val fill: ftype_context -> ftype -> ftype
+val fill : ftype_context -> ftype -> ftype
 
 (* ------------------------------------------------------------------------- *)
 
 (* [hint c] suggests an identifier to represent the hole in the type
    context [c]. *)
 
-val hint: ftype_context -> Identifier.identifier
+val hint : ftype_context -> Identifier.identifier
 
 (* ------------------------------------------------------------------------- *)
 
@@ -91,16 +85,16 @@ val hint: ftype_context -> Identifier.identifier
 
 type tenv
 
-val empty: tenv
-val lookup: atom -> tenv -> ftype
-val bind: atom -> ftype -> tenv -> tenv
-val binds: (atom * ftype) list -> tenv -> tenv
+val empty : tenv
+val lookup : atom -> tenv -> ftype
+val bind : atom -> ftype -> tenv -> tenv
+val binds : (atom * ftype) list -> tenv -> tenv
 
 type jenv
 
-val jempty: jenv
-val jlookup: atom -> jenv -> atom list * ftype list
-val jbind: atom -> atom list -> ftype list -> jenv -> jenv
+val jempty : jenv
+val jlookup : atom -> jenv -> atom list * ftype list
+val jbind : atom -> atom list -> ftype list -> jenv -> jenv
 
 (* ------------------------------------------------------------------------- *)
 
@@ -110,8 +104,6 @@ val jbind: atom -> atom list -> ftype list -> jenv -> jenv
    root of the type [ty]. This can be used, e.g., to report arity errors in
    a readable way. *)
 
-val count_foralls: ftype -> int
-
-
-val pp_ftype: Format.formatter -> ftype -> unit
-val pp_ftype_context: Format.formatter -> ftype_context -> unit
+val count_foralls : ftype -> int
+val pp_ftype : Format.formatter -> ftype -> unit
+val pp_ftype_context : Format.formatter -> ftype_context -> unit

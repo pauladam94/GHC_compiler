@@ -8,13 +8,12 @@ open Terms
 
 (* Print an atom. *)
 
-val print_atom: Export.env -> atom -> string
+val print_atom : Export.env -> atom -> string
 
 (* Print a type. *)
 
-val print_type: Export.env -> ftype -> string
+val print_type : Export.env -> ftype -> string
 
 (* Print a program. *)
 
-val print_program: ('a, 'b, 'c, 'd, 'e, 'f) _program -> string
-
+val print_program : ('a, 'b, 'c, 'd, 'e, 'f) _program -> string

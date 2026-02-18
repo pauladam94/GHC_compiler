@@ -12,40 +12,31 @@
    two billion atoms. 64 bit integers could be used if necessary. *)
 
 type atom = {
-
   (* The identifier that originally gave rise to this atom. *)
-
-  identifier: Identifier.t;
-
+  identifier : Identifier.t;
   (* This atom's identity. *)
-
-  number: int;
-
+  number : int;
   (* Transient fields. *)
-
-  mutable copy: atom;   (* default: self *)
-  mutable next: atom;   (* default: self *)
-  mutable copied: bool; (* default: false; only for sanity checking *)
-
+  mutable copy : atom; (* default: self *)
+  mutable next : atom; (* default: self *)
+  mutable copied : bool; (* default: false; only for sanity checking *)
 }
 
 let pp_atom oc a =
-  Format.fprintf oc "%a__%d"
-    Identifier.pp_identifier a.identifier
-    a.number
+  Format.fprintf oc "%a__%d" Identifier.pp_identifier a.identifier a.number
 
 (* ---------------------------------------------------------------------------- *)
 
 (* A global counter is used to produce unique numbers. *)
 
-let counter =
-  ref 0
+let counter = ref 0
 
 let number () : int =
   let number = !counter in
   let successor = number + 1 in
   counter := successor;
-  assert (successor <> 0); (* check against overflow *)
+  assert (successor <> 0);
+  (* check against overflow *)
   number
 
 (* ---------------------------------------------------------------------------- *)
@@ -53,33 +44,25 @@ let number () : int =
 (* [fresh] and [fresha] produce a fresh atom. *)
 
 let fresh identifier =
-  let rec a = {
-    identifier = identifier;
-    number = number();
-    copy = a;
-    next = a;
-    copied = false;
-  } in
+  let rec a =
+    { identifier; number = number (); copy = a; next = a; copied = false }
+  in
   a
 
-let fresha a =
-  fresh a.identifier
+let fresha a = fresh a.identifier
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Accessors. *)
 
-let identifier { identifier = identifier } = identifier
+let identifier { identifier } = identifier
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Comparison. *)
 
-let equal =
-  (==)
-
-let compare a1 a2 =
-  Stdlib.compare a1.number a2.number
+let equal = ( == )
+let compare a1 a2 = Stdlib.compare a1.number a2.number
 
 (* ---------------------------------------------------------------------------- *)
 
@@ -87,33 +70,24 @@ let compare a1 a2 =
 
 module Atom = struct
   type t = atom
+
   let compare = compare
 end
 
-module AtomSet =
-  Set.Make (Atom)
+module AtomSet = Set.Make (Atom)
 
 module AtomMap = struct
-
   include Map.Make (Atom)
 
   let of_list kds =
     List.fold_left (fun m (key, data) -> add key data m) empty kds
 
-  let cardinal m =
-    fold (fun _ _ n -> n + 1) m 0
+  let cardinal m = fold (fun _ _ n -> n + 1) m 0
 
   let index m =
-    let n, m =
-      fold (fun key _ (n, m) ->
-	n + 1, add key n m
-      ) m (0, empty)
-    in
-    let index key =
-      find key m
-    in
-    n, index
-
+    let n, m = fold (fun key _ (n, m) -> (n + 1, add key n m)) m (0, empty) in
+    let index key = find key m in
+    (n, index)
 end
 
 (* ---------------------------------------------------------------------------- *)
@@ -148,27 +122,23 @@ end
    otherwise [close] will fail. Note that an atom [a] appears in the
    queue if and only if [a.copied] is set. *)
 
-type queue =
-    atom
-
-type phase =
-    queue
+type queue = atom
+type phase = queue
 
 let dummy_identifier : Identifier.t =
-  Identifier.make
-    "__queue_header"
-    (0, "")
-    Lexing.dummy_pos
-    Lexing.dummy_pos
+  Identifier.make "__queue_header" (0, "") Lexing.dummy_pos Lexing.dummy_pos
 
 let setup () : queue =
-  let rec header : atom = {
-    identifier = dummy_identifier;
-    number = (-1);
-    copy = header;
-    next = header; (* this is the only relevant field: this is an empty circular list *)
-    copied = false;
-  } in
+  let rec header : atom =
+    {
+      identifier = dummy_identifier;
+      number = -1;
+      copy = header;
+      next = header;
+      (* this is the only relevant field: this is an empty circular list *)
+      copied = false;
+    }
+  in
   header
 
 let insert (queue : queue) (a : atom) : unit =
@@ -181,8 +151,7 @@ let insert (queue : queue) (a : atom) : unit =
 let fold (f : atom -> 'a -> 'a) (queue : queue) (accu : 'a) : 'a =
   let header = queue in
   let rec loop (a : atom) (accu : 'a) : 'a =
-    if a == header then
-      accu
+    if a == header then accu
     else
       let next = a.next in
       let accu = f a accu in
@@ -191,39 +160,35 @@ let fold (f : atom -> 'a -> 'a) (queue : queue) (accu : 'a) : 'a =
   loop header.next accu
 
 let copy_binder (queue : queue) (a : atom) : atom =
-
   (* If the following check fails, then [copy_binder] or [copy_occurrence] was
      invoked before; this is illegal and suggests either incorrect usage of
      these functions by the client, or non-uniqueness of binders. *)
-
   assert (not a.copied);
 
   (* If this fails, then the following invariant is violated: when [a.copied]
      is [false], the transient fields of the atom [a] have their default
      values. *)
-
-  assert (a.copy == a && a.next == a); 
+  assert (a.copy == a && a.next == a);
 
   (* Create a fresh atom. Link [a] to it. Insert [a] into the queue. *)
-
-  let rec a' = {
-    identifier = a.identifier;
-    number = number();
-    copy = a';
-    next = a';
-    copied = false;
-  } in
+  let rec a' =
+    {
+      identifier = a.identifier;
+      number = number ();
+      copy = a';
+      next = a';
+      copied = false;
+    }
+  in
   a.copy <- a';
   a.copied <- true;
   insert queue a;
   a'
 
 let copy_occurrence (queue : queue) (a : atom) : atom =
-
   (* Set [a.copied], so as to detect an invalid later call to [copy_binder].
      Because we set [a.copied], we must insert [a] into the queue, so that
      [a.copied] is properly reset to [false] when the copying phase is over. *)
-
   if not a.copied then begin
     a.copied <- true;
     insert queue a
@@ -233,7 +198,6 @@ let copy_occurrence (queue : queue) (a : atom) : atom =
      contents of its [copy] field. If the binder that corresponds to this
      occurrence lies in the scope of this copying phase, then we get the fresh
      copy. Otherwise, we get [a] itself -- [a] is a ``free atom''. *)
-
   a.copy
 
 (* [close queue] considers each atom in [queue], and restores its
@@ -241,11 +205,12 @@ let copy_occurrence (queue : queue) (a : atom) : atom =
    invalid and is discarded. *)
 
 let close (queue : queue) : unit =
-  fold (fun a () ->
-    a.copy <- a;
-    a.next <- a;
-    a.copied <- false
-  ) queue ()
+  fold
+    (fun a () ->
+      a.copy <- a;
+      a.next <- a;
+      a.copied <- false)
+    queue ()
 
 (* ---------------------------------------------------------------------------- *)
 
@@ -267,76 +232,60 @@ let close (queue : queue) : unit =
 exception Map
 
 let map_binder (queue : queue) (a : atom) (a' : atom) : unit =
-
   (* If the following check fails, then [map_binder] or [map_occurrence] was
      invoked before; this is illegal and suggests either incorrect usage of
      these functions by the client, or non-uniqueness of binders. *)
-
   assert (not a.copied);
 
   (* If this fails, then the following invariant is violated: when [a.copied]
      is [false], the transient fields of the atom [a] have their default
      values. *)
-
-  assert (a.copy == a && a.next == a); 
+  assert (a.copy == a && a.next == a);
 
   (* Link [a] to [a']. Insert [a] into the queue. *)
-
   a.copy <- a';
   a.copied <- true;
   insert queue a
 
 let map_occurrence (queue : queue) (a : atom) (a' : atom) : unit =
-
   (* Set [a.copied], so as to detect an invalid later call to [map_binder].
      Because we set [a.copied], we must insert [a] into the queue, so that
      [a.copied] is properly reset to [false] when the copying phase is over. *)
-
   if not a.copied then begin
     a.copied <- true;
     insert queue a
   end;
 
   (* Check that [a'] is the image of [a]. *)
-
-  if a.copy != a' then
-    raise Map
+  if a.copy != a' then raise Map
 
 (* ---------------------------------------------------------------------------- *)
 
 (* Listing free atoms. *)
 
 let fv_binder (queue : queue) (a : atom) : unit =
-
   (* If the following check fails, then [fv_binder] or [fv_occurrence] was
      invoked before; this is illegal and suggests either incorrect usage of
      these functions by the client, or non-uniqueness of binders. *)
-
   assert (not a.copied);
 
   (* If this fails, then the following invariant is violated: when [a.copied]
      is [false], the transient fields of the atom [a] have their default
      values. *)
-
-  assert (a.copy == a && a.next == a); 
+  assert (a.copy == a && a.next == a);
 
   (* Mark this atom. *)
-
   a.copied <- true;
   insert queue a
 
 let fv_occurrence (queue : queue) (a : atom) (accu : atom list) : atom list =
-
   (* If the atom is marked, it is either free, but already known, or bound.
      In either case, it should not be added to the list of free atoms. If
      the atom is unmarked, then it is free and was not previously known:
      add it to the list and mark it. *)
-
   if not a.copied then begin
     a.copied <- true;
     insert queue a;
     a :: accu
   end
-  else
-    accu
-
+  else accu
