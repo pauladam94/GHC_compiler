@@ -6,8 +6,8 @@
  (flags --explain))
 
 (executable
- (public_name joujou.exe)
- (name joujou)
+ (public_name tester.exe)
+ (name tester)
  (promote (until-clean))
  (preprocess
   (pps ppx_deriving.std))

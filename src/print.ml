@@ -155,7 +155,6 @@ type def_context =
 
 let empty_dc = DC ([], [], None)
 
-exception Inconsistency
 
 (* ------------------------------------------------------------------------- *)
 
@@ -192,7 +191,7 @@ and pterm env term =
         try
           (* move to context-carrying mode, with an empty context *)
           pterm_with_dc env empty_dc term
-        with Inconsistency ->
+        with Exn.Inconsistency ->
           (* if this fails, revert to simple mode *)
           pdef env [] [ (x, domain) ] None body
       end
@@ -200,7 +199,7 @@ and pterm env term =
         try
           (* move to context-carrying mode, with an empty context *)
           pterm_with_dc env empty_dc term
-        with Inconsistency ->
+        with Exn.Inconsistency ->
           (* if this fails, revert to simple mode *)
           pdef env [ a ] [] None body
       end
@@ -242,7 +241,7 @@ and confront_oty oty1 ty2 =
   match oty1 with
   | None -> Some ty2
   | Some ty1 when Types.equal ty1 ty2 -> Some ty2
-  | Some _ -> raise Inconsistency
+  | Some _ -> raise Exn.Inconsistency
 
 and apply_oty oty domain1 =
   (* Presumably the type annotation [oty], if present, is a function
@@ -252,7 +251,7 @@ and apply_oty oty domain1 =
   | None -> None
   | Some (TyArrow (domain2, codomain)) when Types.equal domain1 domain2 ->
       Some codomain
-  | Some _ -> raise Inconsistency
+  | Some _ -> raise Exn.Inconsistency
 
 and instantiate_oty oty a =
   (* Presumably the type annotation [oty], if present, is a universal
@@ -260,7 +259,7 @@ and instantiate_oty oty a =
   match oty with
   | None -> None
   | Some (TyForall body) -> Some (fill body (TyFreeVar a))
-  | Some _ -> raise Inconsistency
+  | Some _ -> raise Exn.Inconsistency
 
 (* ------------------------------------------------------------------------- *)
 
@@ -355,6 +354,7 @@ let doc2string doc =
   PPrint.ToBuffer.pretty 0.95 78 b doc;
   B.contents b
 
+let print_term env t = doc2string (pterm env t)
 let print_atom env ty = doc2string (pvar env ty)
 let print_type env ty = doc2string (pty env ty)
 let print_program p = doc2string (print_program p)

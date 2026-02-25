@@ -9,9 +9,11 @@ open Print
 (* Error messages. *)
 
 let mismatch xenv loc expected inferred =
-  Error.error [ loc ]
-    (sprintf "Type mismatch.\nExpected: %s\nInferred: %s"
-       (print_type xenv expected) (print_type xenv inferred))
+  raise
+    (Exn.TypeCheckError
+       (sprintf "Locations : %s\nType mismatch.\nExpected: %s\nInferred: %s"
+       (sprintf "%s" (Loc.print_location loc))
+          (print_type xenv expected) (print_type xenv inferred)))
 
 let expected_form xenv loc form ty =
   Error.error [ loc ]

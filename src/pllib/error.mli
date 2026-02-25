@@ -1,17 +1,7 @@
-(* This module helps report errors. *)
+(* This module helps report error *)
 
-type location = Lexing.position * Lexing.position
+open Loc
 
-val pp_location : Format.formatter -> location -> unit
-
-(* A dummy location. *)
-
-val dummy : location
-
-(* [override loc1 loc2] returns [loc2], unless [loc2] is a dummy location,
-   in which case it returns [loc1]. *)
-
-val override : location -> location -> location
 
 (* [error locs msg] displays the error message [msg], referring to the
    locations [locs], and stops the program. *)

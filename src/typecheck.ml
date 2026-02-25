@@ -5,7 +5,11 @@ open Terms
 open Symbols
 open Print
 open Typerr
+open Error
+open Loc
 module TS = Tsubst
+
+let print = Store.print_to_buffer
 
 (* ------------------------------------------------------------------------- *)
 
@@ -28,69 +32,104 @@ module TS = Tsubst
 
 let rec infer
     (* [infer] expects... *)
+    (* a program, which provides information about type & data constructors; *)
       (p : pre_program)
-      (* a program, which provides information about type & data constructors; *)
-    (xenv : Export.env) (* a pretty-printer environment, for printing types; *)
-    (loc : Error.location) (* a location, for reporting errors; *)
-    (tsubst : TS.tsubst) (* a type substitution; *)
-    (tenv : tenv) (* a typing environment; *)
-    (jenv : jenv) (* a join-typing environment [unused until Task 3]; *)
-    (term : pre_fterm) (* a term; *) : ftype =
-  (* ...and returns a type. *)
+    (* a pretty-printer environment, for printing types; *)
+      (xenv : Export.env)
+    (* a location, for reporting errors; *)
+      (loc : location)
+    (* a type substitution; *)
+      (tsubst : TS.tsubst)
+    (* a typing environment; *)
+      (tenv : tenv)
+    (* a join-typing environment [unused until Task 3]; *)
+      (jenv : jenv)
+    (* a term; *)
+      (term : pre_fterm) : ftype (* ...and returns a type. *) =
   match term with
-  | TeVar (x, info) ->
+  | TeVar (x, type_info) ->
+      (* DONE *)
       (* Look up [x] in the typing environment. *)
-
       (* This lookup cannot fail, because [Internalize] checks that all
-	 identifiers are properly bound when it replaces identifiers with
-	 atoms. *)
+	       identifiers are properly bound when it replaces identifiers with atoms. *)
       let ty = lookup x tenv in
-      info := Some ty;
+      type_info := Some ty;
       ty
+  (* lambda x : T . t*)
   | TeAbs (x, domain, body) ->
+      (* DONE *)
       (* Extend the typing environment. *)
-      let outside_tenv = tenv in
       let tenv = bind x domain tenv in
       (* Typecheck the function body, and build a function type. *)
       let codomain = infer p xenv loc tsubst tenv jempty body in
       let fty = TyArrow (domain, codomain) in
       (* Return the type of the function. *)
       fty
-  | TeApp (term1, term2, info) ->
+  | TeApp (term1, term2, type_info) ->
+      (* DONE *)
       (* Typecheck the left sub-term, and check that its type is an arrow.
-	 Record its domain and codomain, for use by the defunctionalization
-	 phase. Check the right sub-term against the domain of the
-	 arrow. Return the codomain of the arrow. *)
+	       Record its domain and codomain, for use by the defunctionalization
+	       phase. Check the right sub-term against the domain of the
+	       arrow. Return the codomain of the arrow. *)
       let domain, codomain =
         deconstruct_arrow xenv loc (infer p xenv loc tsubst tenv jenv term1)
       in
-      info := Some { domain; codomain };
+      type_info := Some { domain; codomain };
       check p xenv tsubst tenv jenv term2 domain;
       codomain
+  (* let x = t in t' *)
   | TeLet (x, t, t') ->
+      (* Infer type of t *)
       let codomain = infer p xenv loc tsubst tenv jempty t in
+      (* Export the variable x in the printing environment *)
+      let xenv = Export.bind xenv x in
       let new_environment = bind x codomain tenv in
       infer p xenv loc tsubst new_environment jempty t'
+  (* fun [ a ] = t *)
   | TeTyAbs (x, t) ->
+      (* Export the variable in the printing environment *)
+      let xenv = Export.bind xenv x in
+
       let type_t = infer p xenv loc tsubst tenv jempty t in
       TyForall (abstract x type_t)
-  | TeTyApp (t, type_t, runtime) ->
-      let context =
+  (* t [T] *)
+  | TeTyApp (t, type_t, type_info) ->
+      let gen =
         deconstruct_univ xenv loc (infer p xenv loc tsubst tenv jempty t)
       in
-      fill context type_t
-  | TeData (x, types, data, runtime) ->
+      type_info := Some { gen };
+      fill gen type_t
+  (* data_constructor [types] { data .. } *)
+  | TeData (data_constructor, types, datas, type_info) ->
+      let type_constructor = type_scheme p data_constructor in
+
+      let type_of_data =
+        match type_constructor with
+        | TyForall context -> fill context (List.hd types)
+        | _ -> type_constructor
+      in
+
+      let domain, codomain =
+        deconstruct_data_arrow xenv loc data_constructor type_of_data
+          (List.length datas)
+      in
       List.iter
-        (fun (term, term_type) -> check p xenv tsubst tenv jenv term term_type)
-        (List.combine data types);
-      TyCon (x, types)
-  | TeTyAnnot (x, t) -> t
-  | TeMatch (t, return_type, clauses, runtime) ->
+        (fun (t, data) -> check p xenv tsubst tenv jenv data t)
+        (List.combine domain datas);
+      (* todo check that data has the right type *)
+      type_info := Some codomain;
+      codomain
+  | TeTyAnnot (x, t) ->
+      check p xenv tsubst tenv jenv x t;
+      t
+  (* match t return return_type with clauses *)
+  | TeMatch (t, return_type, clauses, type_info) ->
       let type_t = infer p xenv loc tsubst tenv jempty t in
       List.iter
         (fun clause ->
           check_clause p xenv tsubst tenv jenv type_t return_type clause)
         clauses;
+      type_info := Some return_type;
       return_type
   | TeLoc (location, t) -> infer p xenv location tsubst tenv jempty t
 
@@ -120,7 +159,9 @@ and check
   match term with
   | TeLoc (loc, term) ->
       let inferred = infer p xenv loc tsubst tenv jenv term in
-      ()
+      if not (TS.equal tsubst expected inferred) then
+        let _ = mismatch xenv loc expected inferred in
+        raise (Exn.TypeCheckError "")
   | _ ->
       (* out of luck! We run in degraded mode, location will be wrong!
         This should only happen on simplified terms. *)
@@ -154,7 +195,8 @@ and lookup_and_instantiate p xenv loc dc tys =
    It checks that the arity of this arrow type is equal to [found].
    It returns the list [domains] and the type [codomain]. *)
 
-and deconstruct_data_arrow xenv loc dc dcty found =
+and deconstruct_data_arrow (xenv : Export.env) (loc : location) (dc : atom)
+    (dcty : ftype_info) (found : int) : ftype_info list * ftype_info =
   (* What remains of [dcty] should now be an arrow type, whose domain
      is a tuple type. This cannot fail, since all type schemes have
      this structure. *)
@@ -171,41 +213,38 @@ and deconstruct_data_arrow xenv loc dc dcty found =
 
 (* ------------------------------------------------------------------------- *)
 
-(* [check_clause p xenv hyps tenv domain codomain clause] checks that [clause]
-   implements a function of type [domain] to [codomain]. *)
-
-and check_clause p xenv tsubst tenv jenv scrutinee result = function
-    | Clause (PatData (loc, dc, tyvars, tevars, infos), term) ->
-        (* Introduce the type arguments. This requires extending the pretty-
-	 printing environment. *)
-        let xenv = List.fold_left Export.bind xenv tyvars in
-        (* Look up and instantiate the type scheme associated with this
-	 data constructor. *)
-        let typs = List.map (fun a -> TyFreeVar a) tyvars in
-        let dcty = lookup_and_instantiate p xenv loc dc typs in
-        (* What remains of [dcty] should now be an arrow type, whose domain
-	 is a tuple type. Extract the domains and codomain. *)
-        let domains, codomain =
-          deconstruct_data_arrow xenv loc dc dcty (List.length tevars)
-        in
-        (* Bind the term variables. *)
-        let tenv = binds (List.combine tevars domains) tenv in
-        (* no arity error is possible *)
-        infos := Some domains;
-        (* Further assume an equation between the codomain of the data constructor
-	 and the type of the scrutinee. *)
-        let tsubst = TS.binds_tycon codomain scrutinee tsubst in
-        (* Finally, check the body of the clause. *)
-        check p xenv tsubst tenv jenv term result
+(** [check_clause p xenv hyps tenv domain codomain clause] checks that [clause]
+    implements a function of type [domain] to [codomain]. *)
+and check_clause p xenv tsubst tenv jenv scrutinee result clause =
+  match clause with
+  | Clause (PatData (loc, dc, tyvars, tevars, infos), term) ->
+      (* Introduce the type arguments. This requires extending the prettyprinting environment. *)
+      let xenv = List.fold_left Export.bind xenv tyvars in
+      (* Look up and instantiate the type scheme associated with this data constructor. *)
+      let typs = List.map (fun a -> TyFreeVar a) tyvars in
+      let dcty = lookup_and_instantiate p xenv loc dc typs in
+      (* What remains of [dcty] should now be an arrow type, whose domain is a tuple type.
+           Extract the domains and codomain. *)
+      let domains, codomain =
+        deconstruct_data_arrow xenv loc dc dcty (List.length tevars)
+      in
+      (* Bind the term variables. *)
+      let tenv = binds (List.combine tevars domains) tenv in
+      (* no arity error is possible *)
+      infos := Some domains;
+      (* Further assume an equation between the codomain of the data constructor and the type
+           of the scrutinee. *)
+      let tsubst = TS.binds_tycon codomain scrutinee tsubst in
+      (* Finally, check the body of the clause. *)
+      check p xenv tsubst tenv jenv term result
 
 (* ------------------------------------------------------------------------- *)
 
 (* A complete program is typechecked within empty environments. *)
 
 let run (Prog (tctable, dctable, term) as p : pre_program) =
-  printf "Inside RUN";
   let xenv = Export.empty
-  and loc = Error.dummy
+  and loc = dummy
   and tsubst = TS.empty
   and tenv = Types.empty
   and jenv = Types.jempty in

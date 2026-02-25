@@ -6,14 +6,15 @@ open Terms
    in internal form. It relies on the basic machinery provided by
    [Export]. *)
 
-(* Print an atom. *)
+(** Print a term *)
+val print_term : Export.env -> ('a, 'b, 'c, 'd, 'e, 'f) _fterm -> string
 
+
+(** Print an atom. *)
 val print_atom : Export.env -> atom -> string
 
-(* Print a type. *)
-
+(** Print a type. *)
 val print_type : Export.env -> ftype -> string
 
-(* Print a program. *)
-
+(** Print a program. *)
 val print_program : ('a, 'b, 'c, 'd, 'e, 'f) _program -> string

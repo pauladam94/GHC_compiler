@@ -6,6 +6,7 @@
 open Error
 open Atom
 open Types
+open Loc
 
 (* ------------------------------------------------------------------------- *)
 
@@ -51,50 +52,38 @@ type ftype_info = ftype [@@deriving show]
 (* Terms. *)
 
 type ('a, 'b, 'c, 'd, 'e, 'f) _fterm =
-  | TeVar of
-      atom
-      * (* variable name *)
-      'a
-  (* typechecker meta-data *)
   (* x *)
-  | TeAbs of
-      atom
-      * (* function parameter *)
-        ftype
-      * (* function parameter's type *)
-      ('a, 'b, 'c, 'd, 'e, 'f) _fterm
-  (* function body *)
+  | TeVar of atom * 'a (* variable name *)
   (* lambda x : T . t*)
-  | TeApp of
-      ('a, 'b, 'c, 'd, 'e, 'f) _fterm
-      * (* function *)
-      ('a, 'b, 'c, 'd, 'e, 'f) _fterm
-      * (* argument *)
-      'b
-  (* typechecker meta-data *)
+  | TeAbs of
+      atom (* function parameter *)
+      * ftype (* function parameter's type *)
+      * ('a, 'b, 'c, 'd, 'e, 'f) _fterm (* function body *)
   (* t t *)
+  | TeApp of
+      ('a, 'b, 'c, 'd, 'e, 'f) _fterm (* function *)
+      * ('a, 'b, 'c, 'd, 'e, 'f) _fterm (* argument *)
+      * 'b
+  (* let x = t in t *)
   | TeLet of
       atom * ('a, 'b, 'c, 'd, 'e, 'f) _fterm * ('a, 'b, 'c, 'd, 'e, 'f) _fterm
-    (* let x = t in t *)
-  | TeTyAbs of atom * ('a, 'b, 'c, 'd, 'e, 'f) _fterm (* fun [ a ] = t *)
-  | TeTyApp of ('a, 'b, 'c, 'd, 'e, 'f) _fterm * ftype * 'c
-  (* typechecker meta-data *)
+  (* fun [ a ] = t *)
+  | TeTyAbs of atom * ('a, 'b, 'c, 'd, 'e, 'f) _fterm
   (* t [ T ] *)
-  | TeData of atom * ftype list * ('a, 'b, 'c, 'd, 'e, 'f) _fterm list * 'd
-  (* typechecker meta-data *)
+  | TeTyApp of ('a, 'b, 'c, 'd, 'e, 'f) _fterm * ftype * 'c
   (* K [ T ... T ] { t; ...; t } *)
-  | TeTyAnnot of ('a, 'b, 'c, 'd, 'e, 'f) _fterm * ftype (* (t : T) *)
+  | TeData of atom * ftype list * ('a, 'b, 'c, 'd, 'e, 'f) _fterm list * 'd
+  (* (t : T) *)
+  | TeTyAnnot of ('a, 'b, 'c, 'd, 'e, 'f) _fterm * ftype
+  (* match t return T with clause ... clause end *)
   | TeMatch of
       ('a, 'b, 'c, 'd, 'e, 'f) _fterm
       * ftype
       * ('a, 'b, 'c, 'd, 'e, 'f) _clause list
       * 'e
-  (* typechecker meta-data *)
-  (* match t return T with clause ... clause end *)
-  | TeLoc of location * ('a, 'b, 'c, 'd, 'e, 'f) _fterm
-(* t *)
-(* the parser generates [TeLoc] nodes to keep track of locations
+  (* the parser generates [TeLoc] nodes to keep track of locations
 	 within the source code. *)
+  | TeLoc of location * ('a, 'b, 'c, 'd, 'e, 'f) _fterm
 
 and ('a, 'b, 'c, 'd, 'e, 'f) _clause =
   | Clause of 'f _pattern * ('a, 'b, 'c, 'd, 'e, 'f) _fterm

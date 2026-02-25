@@ -47,8 +47,7 @@ type ftype =
   | TyArrow of ftype * ftype (* T -> T *)
   | TyForall of ftype_context (* forall a . T *)
   | TyCon of atom * ftype list (* tc T ... T *)
-  | TyTuple of ftype list
-(* { T; ... T } *)
+  | TyTuple of ftype list (* { T; ... T } *)
 
 and ftype_context
 (* the representation of type contexts is not published, so the only way

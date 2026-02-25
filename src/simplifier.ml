@@ -35,13 +35,6 @@ open Tsubst
 
 (* ------------------------------------------------------------------------- *)
 
-(* Flag set at runtime to indicate whether case-of-case
-   transformations must be applied or not. *)
-
-let optimize_caseofcase = ref false
-
-(* ------------------------------------------------------------------------- *)
-
 (* Term substitution. *)
 
 (* As we go along simplifying a term, we may decide to substitute an
@@ -277,7 +270,7 @@ let simplify_many outfile typ tctable dctable =
 (* [program outfile prog] optimizes the program [prog] while, in case
    of a type error, dumping the intermediary steps in
    [outfile_*.fj.dump]. *)
-let program outfile (Prog (tctable, dctable, t)) =
+let program (simplify_caseofcase : bool) outfile (Prog (tctable, dctable, t)) =
   let typ = Typecheck.type_of t in
   let t = simplify_many outfile typ tctable dctable t in
   Prog (tctable, dctable, t)

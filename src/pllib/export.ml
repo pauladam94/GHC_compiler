@@ -31,20 +31,18 @@ let bind { mapping; salt } a =
 let obind env = function None -> env | Some a -> bind env a
 let sbind env atoms = List.fold_left bind env atoms
 
-(* [resolve env a] looks up the identifier associated with [a] in
-   the environment [env]. It is an error to look up an identifier
-   that was not previously bound. *)
-
-(* In other words, if your code causes this assertion to fail, then
-   you probably forgot to bind some type variables in your export
-   environment! *)
-
+(** [resolve env a] looks up the identifier associated with [a] in the
+    environment [env]. It is an error to look up an identifier that was not
+    previously bound. *)
 let resolve { mapping } a =
   try AM.find a mapping
   with Not_found ->
-    Printf.fprintf stderr "Export: unbound atom: %s\n"
+    (* In other words, if your code causes this assertion to fail, then
+   you probably forgot to bind some type variables in your export
+   environment! *)
+    Printf.printf "Export: unbound atom: %s\n"
       (Identifier.name (Atom.identifier a));
-    assert false
+    raise (Exn.UnboundAtom (Identifier.name (Atom.identifier a)))
 
 (* Sometimes, identifiers of a certain sort are bound globally and implicitly
    -- that is, there is no explicit binding form for them. In that case, a

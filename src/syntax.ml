@@ -86,7 +86,7 @@ type fterm =
   | SynTeTyAnnot of fterm * ftype (* (t : T) *)
   | SynTeMatch of fterm * ftype * clause list
     (* match t return T with clause ... clause end *)
-  | SynTeLoc of location * fterm
+  | SynTeLoc of Loc.location * fterm
 (* t *)
 (* the parser generates [SynTeLoc] nodes to keep track of locations
 	 within the source code. *)
@@ -95,7 +95,7 @@ and clause = SynClause of pattern * fterm
 (* p -> t *)
 
 and pattern =
-  | SynPatData of location * identifier * identifier list * identifier list
+  | SynPatData of Loc.location * identifier * identifier list * identifier list
     (* K [ a ... a ] { x; ...; x } *)
 [@@deriving show { with_path = false }]
 
