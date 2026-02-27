@@ -9,7 +9,6 @@ open Terms
 (** Print a term *)
 val print_term : Export.env -> ('a, 'b, 'c, 'd, 'e, 'f) _fterm -> string
 
-
 (** Print an atom. *)
 val print_atom : Export.env -> atom -> string
 

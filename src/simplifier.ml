@@ -2,6 +2,7 @@ open Atom
 open Terms
 open Types
 open Tsubst
+open Print
 
 let print = Store.print_to_buffer
 
@@ -80,11 +81,28 @@ type 'a scoped = Scope of Subst.t * tsubst * 'a
    typical zipper construction.
  *)
 
+(** C ::= | Nil | [] term | [] [type] | match [] result C with C *)
 type context =
   | Nil of ftype
   | CtxtApp of (fterm * application_info) scoped * context
   | CtxtTyApp of (ftype * type_application_info) scoped * context
   | CtxtMatch of (ftype * clause list * ftype_info) scoped * context
+
+let print_context (args : context) : unit =
+  let rec print_context : context -> unit = function
+      | Nil ty -> print "Nil"
+      | CtxtApp (Scope (_, _, (term, { domain; codomain })), args) ->
+          print "App | ";
+          print_context args
+      | CtxtTyApp (Scope (_, _, (term, { gen })), args) ->
+          print "TyApp | ";
+          print_context args
+      | CtxtMatch (term, args) ->
+          print "Match | ";
+          print_context args
+  in
+  print_context args;
+  print "\n"
 
 (* [type_of_hole E] computes the type [ty] of the hole in `E[ _ : ty ]` *)
 
@@ -107,14 +125,13 @@ let rec type_of_cont : context -> ftype = function
 
 (* Simplification routine. *)
 
-(* [simplify (Scope (subst, tsubst, term))] yields a [pre_fterm]
-   [pterm] such that
-     [term [subst] [tsubst]] is equivalent to [pterm].
- *)
-let rec simplify : fterm scoped -> pre_fterm = function
-    | Scope (_, tsubst, term) as input ->
-        let typ = Tsubst.apply tsubst (Typecheck.type_of term) in
-        simplify1 (Nil typ) input
+(** [simplify (Scope (subst, tsubst, term))] yields a [pre_fterm] [pterm] such
+    that [term [subst] [tsubst]] is equivalent to [pterm]. *)
+let rec simplify (term : fterm scoped) : pre_fterm =
+  match term with
+  | Scope (_, tsubst, term) as input ->
+      let typ = Tsubst.apply tsubst (Typecheck.type_of term) in
+      simplify1 (Nil typ) input
 
 (** [simplify1 E (Scope (subst, tsubst, term))] yields a [pre_fterm] [pterm]
     such that
@@ -125,24 +142,27 @@ let rec simplify : fterm scoped -> pre_fterm = function
     by [args]) onto to [t] (this is achieved with [apply], defined below). *)
 and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
     pre_fterm =
-  match term with
+  match (term, args) with
   (* 0. go through noise *)
-  | TeTyAnnot (term, _) ->
+  | TeTyAnnot (term, _), _ ->
       (* Update type annotation *)
       let typ = type_of_cont args in
       let term = simplify1 args (Scope (subst, tsubst, term)) in
       TeTyAnnot (term, typ)
-  | TeLoc (loc, term) ->
+  | TeLoc (loc, term), _ ->
       (* Drop locations, as they become meaningless *)
       simplify1 args (Scope (subst, tsubst, term))
   (* 1. Build up the evaluation context E[_] in args *)
-  | TeApp (term1, term2, info) ->
+  (* term = term1 term2 *)
+  | TeApp (term1, term2, info), _ ->
       let args = CtxtApp (Scope (subst, tsubst, (term2, info)), args) in
       simplify1 args (Scope (subst, tsubst, term1))
-  | TeTyApp (term1, type2, info) ->
+  (* term = term1 [type2] *)
+  | TeTyApp (term1, type2, info), _ ->
       let args = CtxtTyApp (Scope (subst, tsubst, (type2, info)), args) in
       simplify1 args (Scope (subst, tsubst, term1))
-  | TeMatch (scrutinee, result, clauses, info) ->
+  (* term 'match' scrutinee 'return' result 'with' clauses *)
+  | TeMatch (scrutinee, result, clauses, info), _ ->
       let args =
         CtxtMatch (Scope (subst, tsubst, (result, clauses, info)), args)
       in
@@ -150,8 +170,23 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
   (* 2. Contract the context as much as possible *)
   (*    rule (\beta), (\beta_\tau), (\case), etc. *)
 
-  | _ when false -> failwith "Simplify the context here!"
-  | _ ->
+  (* Beta Rule *)
+  (* (lambda x : sigma. term1) term2 -> term1[x := term2] *)
+  | TeAbs (x, sigma, e), CtxtApp (Scope (subst', tsubst', (v, info)), args) ->
+      let term =
+        TeLet
+          ( x,
+            simplify (Scope (subst', tsubst', v)),
+            simplify (Scope (subst, tsubst, e)) )
+      in
+      apply term args
+  (* Beta tau Rule *)
+  (* Inline Rule *)
+  (* Drop Rule *)
+  (* Case Rule *)
+
+  (* Continue *)
+  | _, _ ->
       (* 3. Structural rules *)
       let term = simplify2 (Scope (subst, tsubst, term)) in
       (* 4. Discharge (and optimize) context *)

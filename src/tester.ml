@@ -36,16 +36,12 @@ let my_assert (name : string) (success : bool) : unit =
 
 let optimize_caseofcase = ref false
 let stuff = ref ""
-let please_optimize = ref false
 let usage = sprintf "Usage: %s <options>\n" Sys.argv.(0)
 
 let () =
   Arg.parse
     (Arg.align
        [
-         ( "--optimize",
-           Arg.Set please_optimize,
-           " Typecheck, optimize, and display the optimized program" );
          ( "--case-of-case",
            Arg.Set optimize_caseofcase,
            " Enable case-of-case optimization" );
@@ -63,30 +59,14 @@ let read (filename : string) : Syntax.program =
   try Parser.program Lexer.main lexbuf
   with Parser.Error -> Error.errorb lexbuf "Syntax error.\n"
 
-let simplify (filename : string) (prog : Terms.pre_program) =
+let simplify (please_optimize : bool) (filename : string)
+    (prog : Terms.pre_program) =
   ignore (Typecheck.run prog);
   let prog = Typecheck.petrify prog in
-  if !please_optimize then Simplifier.program !optimize_caseofcase filename prog
+  if please_optimize then Simplifier.program !optimize_caseofcase filename prog
   else prog
 
 let output prog : string = print_program prog
-
-let process (filename : string) : string =
-  let result =
-    try
-      filename |> read
-      |> dump "AST" (Format.asprintf "%a" Syntax.pp_program)
-      |> Internalize.program
-      |> dump "Internalized" print_program
-      |> simplify filename
-      |> dump "Simplified" print_program
-      |> output
-    with _ ->
-      my_assert filename false;
-      "ERROR"
-  in
-  my_assert filename true;
-  result
 
 (* -------------------------------------------------------------------------- *)
 
@@ -183,8 +163,9 @@ let files_with_ext directory extension =
 (** Checks if the file typecheck or not depeding on [should_fail] *)
 let test1 (should_fail : bool) (filename : string) =
   try
+    let please_optimize = false in
     blue ();
-    Printf.printf "[TESTING %s]" filename;
+    print_to_buffer (sprintf "[TESTING %s]" filename);
     reset ();
     let _ =
       filename |> read
@@ -193,7 +174,7 @@ let test1 (should_fail : bool) (filename : string) =
            (Format.asprintf "%a" Syntax.pp_program)
       |> Internalize.program
       |> dump (Printf.sprintf "Internalized : %s" filename) print_program
-      |> simplify filename
+      |> simplify please_optimize filename
       |> dump (Printf.sprintf "Simplified %s" filename) print_program
       |> output
     in
@@ -209,10 +190,11 @@ let test1 (should_fail : bool) (filename : string) =
 (* Test Task 2 *)
 
 let test2 (should_fail : bool) (filename_spec : string) =
+  let please_optimize = true in
   let filename = sprintf "%s.f" (without_extension filename_spec) in
   try
     blue ();
-    Printf.printf "[TESTING %s]" filename;
+    print_to_buffer (sprintf "[TESTING %s]" filename);
     reset ();
 
     let expected = read_file filename_spec in
@@ -223,7 +205,7 @@ let test2 (should_fail : bool) (filename_spec : string) =
            (Format.asprintf "%a" Syntax.pp_program)
       |> Internalize.program
       |> dump (Printf.sprintf "Internalized : %s" filename) print_program
-      |> simplify filename
+      |> simplify please_optimize filename
       |> dump (Printf.sprintf "Simplified %s" filename) print_program
       |> output
     in

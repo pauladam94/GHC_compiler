@@ -13,6 +13,9 @@ let bind : atom -> ftype -> tsubst -> tsubst = AtomMap.add
 let binds xts tenv =
   List.fold_left (fun tenv (x, ty) -> bind x ty tenv) tenv xts
 
+(** [binds_tycon typ1 typ2 tsubst] expects two types that are expected to be
+    fully-applied type constructors and binds the variables of [typ1] with the
+    instances of [typ2] into [tsubst] *)
 let binds_tycon ty1 ty2 tsubst =
   match (ty1, ty2) with
   | TyCon (tc1, args1), TyCon (tc2, args2) when Atom.equal tc1 tc2 ->
@@ -20,6 +23,7 @@ let binds_tycon ty1 ty2 tsubst =
       binds (List.combine args1 args2) tsubst
   | _ -> assert false
 
+(** [apply tsubst typ] discharges the type substitution [tsubst] into [typ]. *)
 let rec apply tsubst typ =
   match typ with
   | TyFreeVar a when AtomMap.mem a tsubst ->
@@ -36,7 +40,11 @@ let rec apply tsubst typ =
       TyForall (abstract a (apply tsubst (fill body ta)))
   (* Some constructs are supposed to appear in type schemes, not in types,
      so we do not deal with them here. *)
-  | TyTuple _ -> assert false (* should not happen *)
+  | TyTuple _ -> assert false
+(* should not happen *)
 
-(* We could avoid 3 traversals here. *)
-let equal tsubst ty1 ty2 = Types.equal (apply tsubst ty1) (apply tsubst ty2)
+(** [equal tsubst typ1 typ2] tells whether [typ1] and [typ2] are equal under the
+    type substitution [tsubst]. *)
+let equal tsubst ty1 ty2 =
+  (* We could avoid 3 traversals here. *)
+  Types.equal (apply tsubst ty1) (apply tsubst ty2)
