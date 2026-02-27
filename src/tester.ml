@@ -169,10 +169,11 @@ let files_with_ext directory extension =
     Sys.readdir directory |> Array.to_list
     |> List.filter (fun f -> Filename.check_suffix f extension)
     |> List.map (Filename.concat directory)
+    (* Sort the filenames to have a deterministic output *)
     |> List.sort (fun f1 f2 ->
         Int.compare
-          (f1 |> read_file |> String.length)
-          (f2 |> read_file |> String.length))
+          (f2 |> read_file |> String.length)
+          (f1 |> read_file |> String.length))
   else []
 
 (* -------------------------------------------------------------------------- *)

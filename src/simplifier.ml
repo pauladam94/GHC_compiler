@@ -3,6 +3,8 @@ open Terms
 open Types
 open Tsubst
 
+let print = Store.print_to_buffer
+
 (* ------------------------------------------------------------------------- *)
 
 (* Specification of the simplifier. *)
@@ -86,7 +88,7 @@ type context =
 
 (* [type_of_hole E] computes the type [ty] of the hole in `E[ _ : ty ]` *)
 
-let type_of_hole = function
+let type_of_hole : context -> ftype = function
     | Nil ty -> ty
     | CtxtApp (Scope (_, tsubst, (_, info)), _) ->
         Tsubst.apply tsubst (type_from_application_info info)
@@ -95,7 +97,7 @@ let type_of_hole = function
     | CtxtMatch (Scope (_, tsubst, (_, _, info)), _) -> Tsubst.apply tsubst info
 
 (* [type_of_cont E] computes the type [ty] of the whole continuation `E[ _ ] : ty` *)
-let rec type_of_cont = function
+let rec type_of_cont : context -> ftype = function
     | Nil ty -> ty
     | CtxtApp (_, args) -> type_of_cont args
     | CtxtTyApp (_, args) -> type_of_cont args
@@ -114,14 +116,13 @@ let rec simplify : fterm scoped -> pre_fterm = function
         let typ = Tsubst.apply tsubst (Typecheck.type_of term) in
         simplify1 (Nil typ) input
 
-(* [simplify1 E (Scope (subst, tsubst, term))] yields a [pre_fterm]
-   [pterm] such that
+(** [simplify1 E (Scope (subst, tsubst, term))] yields a [pre_fterm] [pterm]
+    such that
 
-      [ E[ term [subst] [tsubst] ] ] is equivalent to [pterm].
+    [ E[ term [subst] [tsubst] ] ] is equivalent to [pterm].
 
-   where [E [ t ]] consists in zipping the evaluation context [E]
-   (represented by [args]) onto to [t] (this is achieved with [apply],
-   defined below). *)
+    where [E [ t ]] consists in zipping the evaluation context [E] (represented
+    by [args]) onto to [t] (this is achieved with [apply], defined below). *)
 and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
     pre_fterm =
   match term with
@@ -148,6 +149,7 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
       simplify1 args (Scope (subst, tsubst, scrutinee))
   (* 2. Contract the context as much as possible *)
   (*    rule (\beta), (\beta_\tau), (\case), etc. *)
+
   | _ when false -> failwith "Simplify the context here!"
   | _ ->
       (* 3. Structural rules *)
@@ -155,13 +157,10 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
       (* 4. Discharge (and optimize) context *)
       apply term args
 
-(* [simplify2 (Scope (subst, tsubst, term))] yields a [pre_fterm]
-   [pterm] such that
-     [term [subst] [tsubst]] is equivalent to [pterm].
+(** [simplify2 (Scope (subst, tsubst, term))] yields a [pre_fterm] [pterm] such
+    that [term [subst] [tsubst]] is equivalent to [pterm].
 
-   It focuses on structural optimization rules.
- *)
-
+    It focuses on structural optimization rules. *)
 and simplify2 (Scope (subst, tsubst, term) : fterm scoped) : pre_fterm =
   match term with
   | TeLet (x, term1, term2) ->
@@ -183,10 +182,8 @@ and simplify2 (Scope (subst, tsubst, term) : fterm scoped) : pre_fterm =
       TeData (dc, tys, fields, reset ())
   | _ -> assert false
 
-(* [simplify_clause scrutinee clause] propagates simplification to the
-   term within the clause while maintaining the term and type
-   substitutions. *)
-
+(** [simplify_clause scrutinee clause] propagates simplification to the term
+    within the clause while maintaining the term and type substitutions. *)
 and simplify_clause (scrutinee : pre_fterm)
     (Scope (subst, tsubst, clause) : clause scoped) : pre_clause =
   match clause with
@@ -195,15 +192,14 @@ and simplify_clause (scrutinee : pre_fterm)
       let term = simplify (Scope (subst, tsubst, term)) in
       Clause (pattern, term)
 
-(* [simplify_pattern p] merely has to drop the useless metadata info. *)
+(** [simplify_pattern p] merely has to drop the useless metadata info. *)
 and simplify_pattern (PatData (loc, dc, tyvars, tevars, _)) =
   PatData (loc, dc, tyvars, tevars, reset ())
 
-(* [apply t args] flattens out the evaluation context, represented by
-   [args], around the term [t]. Since we are dealing with scoped
-   constructs, we have to carefully and discharge the term and type
-   substitutions. This is also where one can spot commuting
-   conversions. *)
+(** [apply t args] flattens out the evaluation context, represented by [args],
+    around the term [t]. Since we are dealing with scoped constructs, we have to
+    carefully and discharge the term and type substitutions. This is also where
+    one can spot commuting conversions. *)
 and apply (t : pre_fterm) : context -> pre_fterm = function
     | Nil _ -> t
     | CtxtApp (Scope (subst, tsubst, (a, _)), args) ->
@@ -224,11 +220,10 @@ and apply (t : pre_fterm) : context -> pre_fterm = function
 
 (* Simplification loop. *)
 
-(* The [linter] is responsible for the dirty business of turning an
-   optimized term [t] back into a full program sitting on your
-   hard-drive. We then fire up the usual typechecker so as to get
-   located and traceable error messages. *)
-
+(** The [linter] is responsible for the dirty business of turning an optimized
+    term [t] back into a full program sitting on your hard-drive. We then fire
+    up the usual typechecker so as to get located and traceable error messages.
+*)
 let linter filename typ tctable dctable t =
   let p = Prog (tctable, dctable, t) in
   let outchan = open_out filename in
@@ -267,9 +262,8 @@ let simplify_many outfile typ tctable dctable =
   in
   go 0
 
-(* [program outfile prog] optimizes the program [prog] while, in case
-   of a type error, dumping the intermediary steps in
-   [outfile_*.fj.dump]. *)
+(** [program outfile prog] optimizes the program [prog] while, in case of a type
+    error, dumping the intermediary steps in [outfile_*.fj.dump]. *)
 let program (simplify_caseofcase : bool) outfile (Prog (tctable, dctable, t)) =
   let typ = Typecheck.type_of t in
   let t = simplify_many outfile typ tctable dctable t in
