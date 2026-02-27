@@ -181,6 +181,10 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
       in
       apply term args
   (* Beta tau Rule *)
+  | TeTyAbs (a, e), CtxtTyApp (Scope (subst', tsubst', (phi, info)), args) ->
+      let tsubst' = bind a (Tsubst.apply tsubst' phi) tsubst in
+      let term = simplify (Scope (subst, tsubst', e)) in
+      apply term args
   (* Inline Rule *)
   (* Drop Rule *)
   (* Case Rule *)

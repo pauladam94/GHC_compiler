@@ -230,7 +230,6 @@ let () =
 
   files_with_ext "../test/" ".f" |> List.iter (test1 false);
   files_with_ext "../test/bad/" ".f" |> List.iter (test1 true);
-
   violet ();
   print_to_buffer
     "\n\
