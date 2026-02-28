@@ -186,15 +186,18 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
       let tsubst' = bind a (Tsubst.apply tsubst' phi) tsubst in
       let term = simplify (Scope (subst, tsubst', e)) in
       apply term args
+  (* Drop Rule *)
+  (*  let x = v in e -> e *)
+  (* Rmk : this rule has to be before the Inline rule because of the use of when *)
+  | TeLet (x, v, e), _ when not (AtomSet.mem x (Symbols.fv e)) ->
+      apply (simplify (Scope (subst, tsubst, e))) args
+  (* Case Rule *)
   (* Inline Rule *)
   (* let x = v in c[t] -> let x = v in c[t][x:= v] *)
-  | TeLet (x, v, t), c ->
+  | TeLet (x, v, t), _ ->
       let subst' = Subst.bind x (simplify (Scope (subst, tsubst, v))) subst in
       let term = simplify (Scope (subst', tsubst, t)) in
       apply term args
-  (* Drop Rule *)
-  (* Case Rule *)
-
   (* Continue *)
   | _, _ ->
       (* 3. Structural rules *)
