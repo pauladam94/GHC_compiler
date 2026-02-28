@@ -191,12 +191,38 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
   (* Rmk : this rule has to be before the Inline rule because of the use of when *)
   | TeLet (x, v, e), _ when not (AtomSet.mem x (Symbols.fv e)) ->
       apply (simplify (Scope (subst, tsubst, e))) args
-  (* Case Rule *)
   (* Inline Rule *)
   (* let x = v in c[t] -> let x = v in c[t][x:= v] *)
   | TeLet (x, v, t), _ ->
       let subst' = Subst.bind x (simplify (Scope (subst, tsubst, v))) subst in
       let term = simplify (Scope (subst', tsubst, t)) in
+      apply term args
+  (* Case Rule *)
+  | ( TeData (k, phi, u, info),
+      CtxtMatch
+        (Scope (match_subst, match_tsubst, (result, clauses, match_info)), args)
+    )
+    when Tsubst.equal tsubst info match_info ->
+      let (Clause (PatData (_, _, tyvars, tevars, _), term)) =
+        List.find
+          (fun (Clause (PatData (_, dc, _, _, _), _)) -> Atom.equal dc k)
+          clauses
+      in
+
+      let new_subst =
+        List.fold_left2
+          (fun subst atom assi -> Subst.bind atom assi subst)
+          subst tevars
+          (List.map (fun term -> simplify (Scope (subst, tsubst, term))) u)
+      in
+
+      let new_tsubst =
+        List.fold_left2
+          (fun tsubst atom fty -> Tsubst.bind atom fty tsubst)
+          tsubst tyvars phi
+      in
+
+      let term = simplify (Scope (new_subst, new_tsubst, term)) in
       apply term args
   (* Continue *)
   | _, _ ->

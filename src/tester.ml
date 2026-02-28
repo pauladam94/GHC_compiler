@@ -112,6 +112,8 @@ let multiple_space (len : int) : string =
 let diff (expected : string) (actual : string) : unit =
   let left = String.split_on_char '\n' expected |> Array.of_list in
   let right = String.split_on_char '\n' actual |> Array.of_list in
+  let left_len = Array.length left in
+  let right_len = Array.length right in
   let max_len_expected =
     Array.fold_left
       (fun acc s -> if String.length s > acc then String.length s else acc)
@@ -135,6 +137,17 @@ let diff (expected : string) (actual : string) : unit =
     print_left_right left.(i) right.(i);
     reset ()
   done;
+  red ();
+  if left_len != right_len then
+    if left_len > right_len then
+      for i = min_len to left_len - 1 do
+        print_left_right left.(i) ""
+      done
+    else
+      for i = min_len to right_len - 1 do
+        print_left_right "" right.(i)
+      done;
+  reset ();
   if !should_fail then raise (DiffError "Error on the diff")
 
 (** Do the diff between two files *)
