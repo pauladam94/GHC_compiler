@@ -84,6 +84,17 @@ type ('a, 'b, 'c, 'd, 'e, 'f) _fterm =
   (* the parser generates [TeLoc] nodes to keep track of locations
 	 within the source code. *)
   | TeLoc of location * ('a, 'b, 'c, 'd, 'e, 'f) _fterm
+  (* join *)
+  | TeJoin of
+      atom
+      * atom list
+      * atom list
+      * ftype list
+      * ftype
+      * ('a, 'b, 'c, 'd, 'e, 'f) _fterm
+      * ('a, 'b, 'c, 'd, 'e, 'f) _fterm
+    (* jump *)
+  | TeJump of atom * atom list * ('a, 'b, 'c, 'd, 'e, 'f) _fterm list * ftype
 
 and ('a, 'b, 'c, 'd, 'e, 'f) _clause =
   | Clause of 'f _pattern * ('a, 'b, 'c, 'd, 'e, 'f) _fterm

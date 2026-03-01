@@ -75,22 +75,41 @@ type signature_item =
    These derived forms are desugared into the primitive forms listed here. *)
 
 type fterm =
-  | SynTeVar of identifier (* x *)
-  | SynTeAbs of identifier * ftype * fterm (* fun (x : T) = t *)
-  | SynTeApp of fterm * fterm (* t t *)
-  | SynTeLet of identifier * fterm * fterm (* let x = t in t *)
-  | SynTeTyAbs of identifier * fterm (* fun [ a ] = t *)
-  | SynTeTyApp of fterm * ftype (* t [ T ] *)
+  (* x *)
+  | SynTeVar of identifier
+  (* fun (x : T) = t *)
+  | SynTeAbs of identifier * ftype * fterm
+  (* t t *)
+  | SynTeApp of fterm * fterm
+  (* let x = t in t *)
+  | SynTeLet of identifier * fterm * fterm
+  (* fun [ a ] = t *)
+  | SynTeTyAbs of identifier * fterm
+  (* t [ T ] *)
+  | SynTeTyApp of fterm * ftype
+  (* K [ T ... T ] { t; ...; t } *)
   | SynTeData of identifier * ftype list * fterm list
-    (* K [ T ... T ] { t; ...; t } *)
-  | SynTeTyAnnot of fterm * ftype (* (t : T) *)
+  (* (t : T) *)
+  | SynTeTyAnnot of fterm * ftype
+  (* match t return T with clause ... clause end *)
   | SynTeMatch of fterm * ftype * clause list
-    (* match t return T with clause ... clause end *)
-  | SynTeLoc of Loc.location * fterm
+  | SynTeLoc of Loc.location * fterm (* join j (x : T) : T = t in t *)
+  (* join j (x: T) : T = t in t *)
+  | SynTeJoin of
+      identifier
+      * identifier list
+      * (identifier * ftype) list
+      * ftype
+      * fterm
+      * fterm
+    (* jump j { t } : T *)
+   | SynTeJump of identifier * identifier list * fterm list * ftype
+
+  (* | SynTeJump of identifier * identifier list * fterm list * ftype *)
+
 (* t *)
 (* the parser generates [SynTeLoc] nodes to keep track of locations
 	 within the source code. *)
-
 and clause = SynClause of pattern * fterm
 (* p -> t *)
 

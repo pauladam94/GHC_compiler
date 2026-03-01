@@ -155,7 +155,6 @@ type def_context =
 
 let empty_dc = DC ([], [], None)
 
-
 (* ------------------------------------------------------------------------- *)
 
 (* Terms. Normal mode. *)
@@ -209,6 +208,19 @@ and pterm env term =
         definition
           (string "let" ^^ line ^^ pvar env x ^^ equal)
           term1 (pterm env term2)
+    | TeJoin (j, tyvars, binds_a, binds_ty, fty, term1, term2) ->
+        let env' = Export.bind env j in
+        let env'' = List.fold_left Export.bind env binds_a in
+        definition
+          (string "join" ^^ line ^^ pvar env' j
+          ^^ concat_map (ptype_argument env'') tyvars
+          ^^ concat_map (pterm_argument env'') (List.combine binds_a binds_ty)
+          ^^ colon ^^ pty env fty ^^ equal)
+          (pterm env'' term1) (pterm env' term2)
+    | TeJump (j, tys, fields, fty) ->
+        string "jump" ^^ line ^^ pvar env j ^^ line ^^ string "{"
+        ^^ concat_map (pterm env) fields
+        ^^ string "}" ^^ colon ^^ pty env fty
     | _ -> pterm1 env term)
 
 (* ------------------------------------------------------------------------- *)

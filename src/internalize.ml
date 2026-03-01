@@ -12,7 +12,7 @@ type env = Import.env
 (* Term variables, type variables, type constructors, and data constructors are
    explicitly bound. *)
 
-let bind env id : atom * env =
+let bind (env : env) (id : identifier) : atom * env =
   let env = Import.bind env id in
   (Import.resolve env id, env)
 
@@ -119,6 +119,39 @@ let rec iterm tctable env = function
             iclauses tctable env clauses,
             ref None )
     | SynTeLoc (loc, t) -> TeLoc (loc, iterm tctable env t)
+    | SynTeJump (x, tyargs, fields, ty) ->
+        TeJump
+          ( Import.resolve env x,
+            List.map (Import.resolve env) tyargs,
+            iterms tctable env fields,
+            itype tctable env ty )
+    | SynTeJoin (x, tyargs, binds, ty, terms1, terms2) ->
+        let x, env' = bind env x in
+        let binds_atom, binds_type = List.split binds in
+        let env'', tyargs =
+          List.fold_left_map
+            (* to apply fold left we have to reverse the output of bind *)
+            (fun env ident ->
+              let a, env' = bind env ident in
+              (env', a))
+            env tyargs
+        in
+        let env''', binds_a =
+          List.fold_left_map
+            (* to apply fold left we have to reverse the output of bind *)
+            (fun env ident ->
+              let a, env' = bind env ident in
+              (env', a))
+            env'' binds_atom
+        in
+        TeJoin
+          ( x,
+            tyargs,
+            binds_a,
+            itypes tctable env'' binds_type,
+            itype tctable env'' ty,
+            iterm tctable env''' terms1,
+            iterm tctable env' terms2 )
 
 and iterms tctable env terms = List.map (iterm tctable env) terms
 and iclauses tctable env clauses = List.map (iclause tctable env) clauses
