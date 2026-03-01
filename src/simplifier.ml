@@ -199,9 +199,7 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
       apply term args
   (* Case Rule *)
   | ( TeData (k, phi, u, info),
-      CtxtMatch
-        (Scope (match_subst, match_tsubst, (result, clauses, match_info)), args)
-    )
+      CtxtMatch (Scope (subst', tsubst', (result, clauses, match_info)), args) )
     when Tsubst.equal tsubst info match_info ->
       let (Clause (PatData (_, _, tyvars, tevars, _), term)) =
         List.find
@@ -209,20 +207,20 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
           clauses
       in
 
-      let new_subst =
+      let subst =
         List.fold_left2
           (fun subst atom assi -> Subst.bind atom assi subst)
           subst tevars
           (List.map (fun term -> simplify (Scope (subst, tsubst, term))) u)
       in
 
-      let new_tsubst =
+      let tsubst =
         List.fold_left2
           (fun tsubst atom fty -> Tsubst.bind atom fty tsubst)
           tsubst tyvars phi
       in
 
-      let term = simplify (Scope (new_subst, new_tsubst, term)) in
+      let term = simplify (Scope (subst, tsubst, term)) in
       apply term args
   (* Continue *)
   | _, _ ->
