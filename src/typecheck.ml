@@ -132,6 +132,43 @@ let rec infer
       type_info := Some return_type;
       return_type
   | TeLoc (location, t) -> infer p xenv location tsubst tenv jempty t
+  | TeJoin (j, tys, binds_atom, binds_ty, type_info, term, body) ->
+      let xenv' = List.fold_left Export.bind xenv tys in
+
+      let new_tenv =
+        List.fold_left2
+          (fun tenv atom ftype -> bind atom ftype tenv)
+          tenv binds_atom binds_ty
+      in
+      let new_tenv =
+        List.fold_left2
+          (fun tenv atom ftype -> bind atom ftype tenv)
+          new_tenv tys
+          (List.map (fun ty -> TyFreeVar ty) tys)
+      in
+
+      check p xenv' tsubst new_tenv jenv term type_info;
+
+      let jenv = jbind j tys binds_ty jenv in
+
+      check p xenv tsubst tenv jenv body type_info;
+      type_info
+  | TeJump (j, tyargs, fields, fty) ->
+      let a, sigma = jlookup j jenv in
+
+      List.iter2
+        (fun u sigma ->
+          let sigma =
+            List.fold_left2
+              (fun acc phi a -> fill (abstract a sigma) phi)
+              sigma
+              (List.map ((fun tenv atom -> lookup atom tenv) tenv) tyargs)
+              a
+          in
+          check p xenv tsubst tenv jempty u sigma)
+        fields sigma;
+
+      fty
 
 and check
     (* [check] expects... *)
