@@ -252,7 +252,7 @@ and simplify2 (Scope (subst, tsubst, term) : fterm scoped) : pre_fterm =
       let local_simplify t = simplify (Scope (subst, tsubst, t)) in
       let fields = List.map local_simplify fields in
       TeData (dc, tys, fields, reset ())
-  | _ -> assert false
+  | _ -> assert false (* todo resolve this error *)
 
 (** [simplify_clause scrutinee clause] propagates simplification to the term
     within the clause while maintaining the term and type substitutions. *)

@@ -278,9 +278,9 @@ let test3b (should_fail : bool) (filename_spec : string) =
     let expected = read_file filename_spec in
     let simplified_program =
       filename |> read
-      |> dump
-           (Printf.sprintf "AST : %s" filename)
-           (Format.asprintf "%a" Syntax.pp_program)
+      (* |> dump *)
+           (* (Printf.sprintf "AST : %s" filename) *)
+           (* (Format.asprintf "%a" Syntax.pp_program) *)
       |> Internalize.program
       |> dump (Printf.sprintf "Internalized : %s" filename) print_program
       |> simplify please_optimize filename
@@ -324,14 +324,14 @@ let () =
   flush_buffer true;
   files_with_ext "../test" ".spec2" |> List.iter (test3a false);
 
-(*
+
   violet ();
   print_to_buffer
     "\n>>>>>>>>>> Task 3b - Case of Case Simplification <<<<<<<<<\n";
   reset ();
   flush_buffer true;
   files_with_ext "../test" ".spec3" |> List.iter (test3b false)
-*)
+
 
 
 
