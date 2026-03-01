@@ -68,7 +68,7 @@ test2: $(OPTIMIZE2)
 	$(JOUJOU) --optimize --case-of-case $< > $*.opt3
 	@$(DIFF) $*.opt3 $*.spec3; true
 
-test3a: $(TYPECHECKJ) $(TYPEFAILJ) $(TYPECHECK) $(TYPECHECK)
+test3a: $(TYPECHECKJ) $(TYPEFAILJ) $(TYPECHECK) $(TYPEFAIL)
 
 test3b: $(OPTIMIZE3)
 
