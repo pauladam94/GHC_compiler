@@ -117,7 +117,8 @@ let jlookup : atom -> jenv -> atom list * ftype list =
  fun x jenv ->
   try AtomMap.find x jenv
   with Not_found ->
-    assert false (* should not happen, if there is a binding of [x] in [tenv] *)
+    failwith
+      "Error jlookup : should not happend, if the is a binding of [x] in [tenv]"
 
 let jbind (j : atom) (a : atom list) (tys : ftype list) : jenv -> jenv =
   AtomMap.add j (a, tys)

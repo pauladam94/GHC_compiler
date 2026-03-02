@@ -12,12 +12,16 @@ let red () = print_to_buffer "\027[1;31m"
 let green () = print_to_buffer "\027[1;32m"
 let reset () = print_to_buffer "\027[0m"
 
+(* This block prints even when a test fail
+    The classic behavior being that test fail show the debug output  *)
+let should_print = true
+
 (* Some printing helpers *)
 
 (** Custom assert with colors. If then assert fail we dump the current
     dump_store *)
 let my_assert (name : string) (success : bool) : unit =
-  flush_buffer (not success);
+  flush_buffer ((not success) && should_print);
   if success then (
     green ();
     print_to_buffer "[Passed] ";
@@ -170,7 +174,8 @@ let files_with_ext directory extension =
   else []
 
 (* -------------------------------------------------------------------------- *)
-(** Test Task 1 *)
+(* Test Task 1 *)
+
 (** Checks if the file typecheck or not depeding on [should_fail] *)
 let test1 (should_fail : bool) (filename : string) =
   try
@@ -197,6 +202,7 @@ let test1 (should_fail : bool) (filename : string) =
     | Failure s | Invalid_argument s | UnboundAtom s -> raise e)
 
 (* -------------------------------------------------------------------------- *)
+
 (** Test Task 2 *)
 let test2 (should_fail : bool) (filename_spec : string) =
   let please_optimize = true in
@@ -230,6 +236,7 @@ let test2 (should_fail : bool) (filename_spec : string) =
     | _ -> raise e)
 
 (* -------------------------------------------------------------------------- *)
+
 (** Test Task 3a *)
 let test3a (should_fail : bool) (filename_spec : string) =
   let please_optimize = true in
@@ -240,7 +247,8 @@ let test3a (should_fail : bool) (filename_spec : string) =
     reset ();
 
     let expected = read_file filename_spec in
-      let _ = filename |> read
+    let _ =
+      filename |> read
       |> dump
            (Printf.sprintf "AST : %s" filename)
            (Format.asprintf "%a" Syntax.pp_program)
@@ -248,7 +256,8 @@ let test3a (should_fail : bool) (filename_spec : string) =
       |> dump (Printf.sprintf "Internalized : %s" filename) print_program
       |> simplify please_optimize filename
       |> dump (Printf.sprintf "Simplified %s" filename) print_program
-      |> output in
+      |> output
+    in
 
     my_assert filename (not should_fail)
   with e -> (
@@ -260,6 +269,7 @@ let test3a (should_fail : bool) (filename_spec : string) =
     | _ -> raise e)
 
 (* -------------------------------------------------------------------------- *)
+
 (** Test Task 3b | pretty much the same code as test2 *)
 let test3b (should_fail : bool) (filename_spec : string) =
   let please_optimize = true in
@@ -279,8 +289,8 @@ let test3b (should_fail : bool) (filename_spec : string) =
     let simplified_program =
       filename |> read
       (* |> dump *)
-           (* (Printf.sprintf "AST : %s" filename) *)
-           (* (Format.asprintf "%a" Syntax.pp_program) *)
+      (* (Printf.sprintf "AST : %s" filename) *)
+      (* (Format.asprintf "%a" Syntax.pp_program) *)
       |> Internalize.program
       |> dump (Printf.sprintf "Internalized : %s" filename) print_program
       |> simplify please_optimize filename
@@ -294,8 +304,8 @@ let test3b (should_fail : bool) (filename_spec : string) =
     my_assert filename_spec should_fail;
     match e with
     | DiffError s -> printf "%s\n" s
-    | TypeCheckError s | Failure s | Invalid_argument s | UnboundAtom s ->
-        raise e
+    | Failure s -> printf "%s\n" s
+    | TypeCheckError s | Invalid_argument s | UnboundAtom s -> raise e
     | _ -> raise e)
 
 (* The main program. *)
@@ -324,16 +334,12 @@ let () =
   flush_buffer true;
   files_with_ext "../test" ".spec2" |> List.iter (test3a false);
 
-
   violet ();
   print_to_buffer
     "\n>>>>>>>>>> Task 3b - Case of Case Simplification <<<<<<<<<\n";
   reset ();
   flush_buffer true;
   files_with_ext "../test" ".spec3" |> List.iter (test3b false)
-
-
-
 
 (* todo add again this
   (* If we ask for the case-of-case optimization,

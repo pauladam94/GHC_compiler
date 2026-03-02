@@ -11,9 +11,9 @@ fun (x : char) (v : t) (rhs : bool -> char -> char) : char =
   (join j (b : bool) : char -> char =  rhs b in
   match v return char -> char with
   | A {} ->
-      (jump j { True {} } : char -> char)
+      jump j { True {} } : char -> char
   | B {} ->
-      (jump j { False {} } : char -> char)
+      jump j { False {} } : char -> char
   | C {} ->
       fun (c : char) = c
   end)

@@ -135,19 +135,19 @@ let rec infer
   | TeJoin (j, tys, binds_atom, binds_ty, type_info, term, body) ->
       let xenv' = List.fold_left Export.bind xenv tys in
 
-      let new_tenv =
+      let tenv =
         List.fold_left2
           (fun tenv atom ftype -> bind atom ftype tenv)
           tenv binds_atom binds_ty
       in
-      let new_tenv =
+      let tenv =
         List.fold_left2
           (fun tenv atom ftype -> bind atom ftype tenv)
-          new_tenv tys
+          tenv tys
           (List.map (fun ty -> TyFreeVar ty) tys)
       in
 
-      check p xenv' tsubst new_tenv jenv term type_info;
+      check p xenv' tsubst tenv jenv term type_info;
 
       let jenv = jbind j tys binds_ty jenv in
 
@@ -317,3 +317,5 @@ let rec type_of (term : fterm) : ftype =
   | TeMatch (_, ty, _, _) -> ty
   | TeTyAnnot (_, ty) -> ty
   | TeLoc (_, term) -> type_of term
+  | TeJoin (_, _, _, _, ty, _, _) -> ty
+  | TeJump (_, _, _, ty) -> ty

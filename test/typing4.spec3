@@ -12,9 +12,9 @@ fun (v : t) (big : bool) : bool =
   in
   match v return bool with
   | A {} ->
-      (jump j { True {} } : bool)
+      jump j { True {} } : bool
   | B {} ->
-      (jump j { False {} } : bool)
+      jump j { False {} } : bool
   | C {} ->
       False {}
   end

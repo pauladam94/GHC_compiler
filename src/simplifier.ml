@@ -152,6 +152,34 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
   | TeLoc (loc, term), _ ->
       (* Drop locations, as they become meaningless *)
       simplify1 args (Scope (subst, tsubst, term))
+  (* Case of Case Optimization *)
+  (* TODO: This does not seems to work completely *)
+  | ( TeData (k, phi, u, info),
+      CtxtMatch
+        (Scope (match_subst, match_tsubst, (result, clauses, match_info)), args)
+    )
+    when Tsubst.equal tsubst info match_info ->
+      let (Clause (PatData (_, _, tyvars, tevars, _), term)) =
+        List.find
+          (fun (Clause (PatData (_, dc, _, _, _), _)) -> Atom.equal dc k)
+          clauses
+      in
+
+      let new_subst =
+        List.fold_left2
+          (fun subst atom assi -> Subst.bind atom assi subst)
+          subst tevars
+          (List.map (fun term -> simplify (Scope (subst, tsubst, term))) u)
+      in
+
+      let new_tsubst =
+        List.fold_left2
+          (fun tsubst atom fty -> Tsubst.bind atom fty tsubst)
+          tsubst tyvars phi
+      in
+
+      let term = simplify (Scope (new_subst, new_tsubst, term)) in
+      apply term args
   (* 1. Build up the evaluation context E[_] in args *)
   (* term = term1 term2 *)
   | TeApp (term1, term2, info), _ ->
@@ -222,6 +250,30 @@ and simplify1 (args : context) (Scope (subst, tsubst, term) : fterm scoped) :
 
       let term = simplify (Scope (subst, tsubst, term)) in
       apply term args
+  (* Jumps Rule *)
+  | TeJump (j, tys, fields, fty), CtxtApp (Scope (_, _, (_, _)), args) ->
+      let fields =
+        List.map (fun t -> simplify (Scope (subst, tsubst, t))) fields
+      in
+
+      let fty =
+        match fty with
+        | TyArrow (TyTuple domains, codomain) ->
+            TyArrow (TyTuple (List.tl domains), codomain)
+        | TyArrow (_, codomain) -> codomain
+        | _ -> assert false
+      in
+
+      let term = TeJump (j, tys, fields, fty) in
+      apply term args
+  | TeJump (j, tys, fields, fty), CtxtMatch (Scope (_, _, (result, _, _)), args)
+    ->
+      let fields =
+        List.map (fun t -> simplify (Scope (subst, tsubst, t))) fields
+      in
+
+      let term = TeJump (j, tys, fields, result) in
+      apply term args
   (* Continue *)
   | _, _ ->
       (* 3. Structural rules *)
@@ -252,7 +304,21 @@ and simplify2 (Scope (subst, tsubst, term) : fterm scoped) : pre_fterm =
       let local_simplify t = simplify (Scope (subst, tsubst, t)) in
       let fields = List.map local_simplify fields in
       TeData (dc, tys, fields, reset ())
-  | _ -> assert false (* todo resolve this error *)
+  | TeJoin (j, tys, binds_atom, binds_types, fty, term, body) ->
+      let body = simplify (Scope (subst, tsubst, body)) in
+      TeJoin
+        ( j,
+          tys,
+          binds_atom,
+          binds_types,
+          fty,
+          simplify (Scope (subst, tsubst, term)),
+          body )
+  | TeJump (j, types, fields, fty) ->
+      let fields =
+        List.map (fun t -> simplify (Scope (subst, tsubst, t))) fields
+      in
+      TeJump (j, types, fields, fty)
 
 (** [simplify_clause scrutinee clause] propagates simplification to the term
     within the clause while maintaining the term and type substitutions. *)

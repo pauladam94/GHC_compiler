@@ -42,18 +42,24 @@ raising again the exception we can also get a stack trace in debug mode
 
 ## Task Completion
 
-### Task 1
+### Task 1 (typechecking)
 
 task 1 has been completed.
 
-### Task 2
+### Task 2 (optimization case, beta, beta_tau, inline)
 
 task 2 has been completed.
 
-### Task 3a
+except for 2 tests that are related to match case optimization.
 
-task 3a has not been completed
+### Task 3a (syntax addition)
 
-### Task 3b
+task 3a has been completed.
 
-task 3b has not been completed
+### Task 3b (optimization caseofcase)
+
+task 3b has not been partially completed.
+
+A few tests are passing.
+The other tests are not passin because of real semantic difference between
+the expected file and the one computed (not pretty printer issue).
