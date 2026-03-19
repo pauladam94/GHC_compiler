@@ -14,7 +14,7 @@ let reset () = print_to_buffer "\027[0m"
 
 (* This block prints even when a test fail
     The classic behavior being that test fail show the debug output  *)
-let should_print = true
+let should_print = false
 
 (* Some printing helpers *)
 
